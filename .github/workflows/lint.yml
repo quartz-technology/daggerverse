@@ -22,10 +22,19 @@ jobs:
 
       - name: Install Dagger Zenith
         run: |
-          cd /usr/local/bin && { sudo curl -L https://github.com/jpadams/shykes-dagger-zenith-builder/releases/download/nightly/dagger-zenith-linux-amd64 -o dagger; sudo chmod +x dagger; cd -; }
+          git clone https://github.com/dagger/dagger
+          cd ./dagger
+          ./hack/dev
+          sudo mv ./bin/dagger /usr/local/bin
+
+      - name: Check Zenith Install
+        run: |
           dagger version
 
       - name: Run lint
+        env:
+          _EXPERIMENTAL_DAGGER_RUNNER_HOST: "docker-container://dagger-engine:dev"
         run: |
           cd ci
-          dagger query --doc lint.gql
+          sudo dagger mod sync
+          sudo dagger query --doc lint.gql
