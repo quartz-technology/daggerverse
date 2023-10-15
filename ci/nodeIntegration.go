@@ -6,22 +6,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type IntegrationTest struct{}
-
-func (c *Ci) IntegrationTest() IntegrationTest {
-	return IntegrationTest{}
-}
-
-func (i *IntegrationTest) Run(ctx context.Context) error {
-	eg, gctx := errgroup.WithContext(ctx)
-
-	eg.Go(func() error {
-		return i.Node(gctx)
-	})
-
-	return eg.Wait()
-}
-
 func (i *IntegrationTest) Node(ctx context.Context) error {
 	source := daggerRepository().Directory("./sdk/nodejs")
 

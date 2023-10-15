@@ -6,6 +6,7 @@
   "dependencies": [
     "../golang",
     "../golangci-lint",
-    "../node"
+    "../node",
+    "../redis"
   ]
 }
