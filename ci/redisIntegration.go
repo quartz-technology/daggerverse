@@ -15,24 +15,20 @@ func (i *IntegrationTest) Redis(ctx context.Context) error {
 	server := redisCtr.Server()
 
 	cli := redisCtr.
-		Cli().
-		WithServiceBinding("redis", server.AsService()).
-		WithEntrypoint([]string{"redis-cli", "-h", "redis"})
+		Cli(server.AsService())
 
-	// Set key
-	_, err := cli.WithExec([]string{"SET", "foo", "bar"}).Sync(ctx)
+	_, err := cli.Set("foo", "bar").Sync(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Get key
-	value, err := cli.WithExec([]string{"GET", "foo"}).Stdout(ctx)
+	value, err := cli.Get(ctx, "foo")
 	if err != nil {
 		return err
 	}
 
-	if value != "bar" {
-		return fmt.Errorf("value are not matching, expecting: %s, got: %s", "foo", value)
+	if value != "bar\n" {
+		return fmt.Errorf("value are not matching, expecting: '%s', got: '%s'", "bar", value)
 	}
 
 	return nil
