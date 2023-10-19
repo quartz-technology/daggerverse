@@ -12,7 +12,7 @@ Dagger modules made with ❤️ by Quartz.
 | [Bun](./bun)                     | ⏳      |
 | [Scaleway](./scaleway)           | ⏳      |
 | [Postgres](./postgres)           | ⏳      |
-| [Redis](./redis)                 | ⚠️     |
+| [Redis](./redis)                 | ✅      |
 
 ⚠️ These modules are experimental, feel free to open an issue for any requests or bug report.
 
