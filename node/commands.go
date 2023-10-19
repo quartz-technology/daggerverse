@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 )
 
 // Run returns the container with the command set.
@@ -35,8 +34,9 @@ func (n *Node) Build() *Node {
 
 type PublishOpts struct {
 	Token   *Secret `doc:"Secret token to register to npm registry"`
-	Version string  `doc:"version of the package"`
-	Access  string  `doc:"access permission of the package"`
+	Version string  `doc:"Version of the package"`
+	Access  string  `doc:"Access permission of the package"`
+	DryRun  bool
 }
 
 // Publish publishes the source code to npm registry.
@@ -50,14 +50,24 @@ func (n *Node) Publish(ctx context.Context, opts PublishOpts) (string, error) {
 	npmrc := fmt.Sprintf(`//registry.npmjs.org/:_authToken=%s
 registry=https://registry.npmjs.org/
 always-auth=true`, token)
-	if err := os.WriteFile(".npmrc", []byte(npmrc), 0o600); err != nil {
-		return "", err
+
+	publishCmd := []string{"publish"}
+	if opts.DryRun {
+		publishCmd = append(publishCmd, "--dry-run")
+	}
+
+	if opts.Access != "" {
+		publishCmd = append(publishCmd, "--access", opts.Access)
 	}
 
 	// Set version and publish
 	return n.Ctr.
-		WithExec([]string{"version", opts.Version}).
-		WithExec([]string{"publish", "--access", opts.Access}).
+		WithNewFile(".npmrc", ContainerWithNewFileOpts{
+			Contents:    npmrc,
+			Permissions: 0o600,
+		}).
+		WithExec([]string{"version", "--new-version", opts.Version}).
+		WithExec(publishCmd).
 		Stdout(ctx)
 }
 

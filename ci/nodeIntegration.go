@@ -74,5 +74,26 @@ func (i *IntegrationTest) node(ctx context.Context, ctr *Node) error {
 		return nil
 	})
 
+	//	eg.Go(func() error {
+	//		fmt.Println("Try to publish with dry-run")
+	//
+	//
+	//		secretToken := dag.SetSecret("TOKEN", os.Getenv("NODE_PUBLISH_TOKEN"))
+	//
+	//		out, err := ctr.Publish(ctx, NodePublishOpts{
+	//			DryRun:  true,
+	//			Token:   secretToken,
+	//			Version: "1.0.0",
+	//		})
+	//
+	//		if err != nil {
+	//			return err
+	//		}
+	//
+	//		fmt.Println(out)
+	//
+	//		return nil
+	//	})
+
 	return eg.Wait()
 }

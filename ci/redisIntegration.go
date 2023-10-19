@@ -16,7 +16,7 @@ func (i *IntegrationTest) Redis(ctx context.Context) error {
 
 	cli := redisCtr.
 		Cli().
-		WithServiceBinding("redis", server).
+		WithServiceBinding("redis", server.AsService()).
 		WithEntrypoint([]string{"redis-cli", "-h", "redis"})
 
 	// Set key
