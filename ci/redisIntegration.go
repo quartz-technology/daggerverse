@@ -14,8 +14,7 @@ func (i *IntegrationTest) Redis(ctx context.Context) error {
 
 	server := redisCtr.Server()
 
-	cli := redisCtr.
-		Cli(server.AsService())
+	cli := redisCtr.Cli(server.AsService())
 
 	_, err := cli.Set("foo", "bar").Sync(ctx)
 	if err != nil {
