@@ -32,9 +32,10 @@ func (c *Ci) Lint(ctx context.Context) error {
 		}
 	}
 
-	eg.Go(lintFct("golang/*.go"))
-	eg.Go(lintFct("golangci-lint/*.go"))
-	eg.Go(lintFct("node/*.go"))
+	directories := []string{"golang", "golangci-lint", "node", "redis"}
+	for _, d := range directories {
+		eg.Go(lintFct(fmt.Sprintf("%s/*.go", d)))
+	}
 
 	return eg.Wait()
 }
