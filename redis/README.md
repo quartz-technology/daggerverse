@@ -10,5 +10,6 @@ A simple module to start a redis service.
 | Get a key              | ✅    |
 | Configure Redis server | ✅    |
 | Setup authentication   | ✅    |
+| Clusters               | ❌    |
 
 Made with ❤️ by Quartz.
