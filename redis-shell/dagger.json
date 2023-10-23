@@ -1,11 +1,8 @@
 {
-  "name": "ci",
+  "name": "redisShell",
   "root": "..",
   "sdk": "go",
   "dependencies": [
-    "../golang",
-    "../golangci-lint",
-    "../node",
     "../redis"
   ]
 }

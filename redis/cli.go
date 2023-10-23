@@ -26,6 +26,10 @@ func (r *Redis) Cli(server *Service) (*Cli, error) {
 	}, nil
 }
 
+func (c *Cli) Container() *Container {
+	return c.Ctr
+}
+
 func (c *Cli) Set(key, value string) *Container {
 	return c.Ctr.WithExec([]string{"SET", key, value})
 }
