@@ -32,16 +32,19 @@ func (n *Node) Build() *Node {
 	return n
 }
 
-type PublishOpts struct {
-	Token   *Secret `doc:"Secret token to register to npm registry"`
-	Version string  `doc:"Version of the package"`
-	Access  string  `doc:"Access permission of the package"`
-	DryRun  bool
-}
-
 // Publish publishes the source code to npm registry.
-func (n *Node) Publish(ctx context.Context, opts PublishOpts) (string, error) {
-	token, err := opts.Token.Plaintext(ctx)
+func (n *Node) Publish(
+	ctx context.Context,
+	// secret token to register to npm registry
+	tokenSecret *Secret,
+	// version of the package
+	version string,
+	// access permission of the package
+	access Optional[string],
+	// whether to do a dry run instead of an actual publish
+	dryRun Optional[bool],
+) (string, error) {
+	token, err := tokenSecret.Plaintext(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -52,12 +55,12 @@ registry=https://registry.npmjs.org/
 always-auth=true`, token)
 
 	publishCmd := []string{"publish"}
-	if opts.DryRun {
+	if dryRun.GetOr(false) {
 		publishCmd = append(publishCmd, "--dry-run")
 	}
 
-	if opts.Access != "" {
-		publishCmd = append(publishCmd, "--access", opts.Access)
+	if access, ok := access.Get(); ok {
+		publishCmd = append(publishCmd, "--access", access)
 	}
 
 	// Set version and publish
@@ -66,18 +69,17 @@ always-auth=true`, token)
 			Contents:    npmrc,
 			Permissions: 0o600,
 		}).
-		WithExec([]string{"version", "--new-version", opts.Version}).
+		WithExec([]string{"version", "--new-version", version}).
 		WithExec(publishCmd).
 		Stdout(ctx)
 }
 
-type InstallOpts struct {
-	Pkg []string `doc:"Package to additionally install"`
-}
-
 // Install adds given package.
-func (n *Node) Install(opts InstallOpts) *Node {
-	cmd := append([]string{"install"}, opts.Pkg...)
+func (n *Node) Install(
+	// packages to additionally install
+	pkgs ...string,
+) *Node {
+	cmd := append([]string{"install"}, pkgs...)
 
 	return n.WithContainer(n.Run(cmd))
 }
