@@ -31,7 +31,7 @@ func (i *IntegrationTest) node(ctx context.Context, ctr *Node) error {
 	eg, gctx := errgroup.WithContext(ctx)
 
 	// Install dependencies
-	ctr = ctr.Install()
+	ctr = ctr.Install([]string{})
 
 	eg.Go(func() error {
 		fmt.Println("Use Run to check version")

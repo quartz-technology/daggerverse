@@ -37,4 +37,4 @@ jobs:
         run: |
           cd ci
           sudo dagger mod sync
-          sudo dagger query --doc integrationTest.gql
+          sudo dagger call integration-test run

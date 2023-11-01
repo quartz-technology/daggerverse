@@ -20,11 +20,14 @@ type BuildOpts struct {
 }
 
 // Build returns the container with the built artifact.
-func (g *Golang) Build(opts BuildOpts) *Container {
+func (g *Golang) Build(
+	// Path to write the built binary
+	output Optional[string],
+) *Container {
 	cmd := []string{"build"}
 
-	if opts.Output != "" {
-		cmd = append(cmd, "-o", opts.Output)
+	if output, ok := output.Get(); ok {
+		cmd = append(cmd, "-o", output)
 	}
 
 	return g.Exec(cmd)
@@ -43,7 +46,7 @@ func (g *Golang) Get(packages []string) *Golang {
 }
 
 // Install returns the container with given packages installed.
-func (g *Golang) Install(packages []string) *Golang {
+func (g *Golang) Install(packages ...string) *Golang {
 	cmd := append([]string{"install"}, packages...)
 
 	return g.WithContainer(g.Exec(cmd))

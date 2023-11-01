@@ -37,4 +37,4 @@ jobs:
         run: |
           cd ci
           sudo dagger mod sync
-          sudo dagger query --doc lint.gql
+          sudo dagger call lint
