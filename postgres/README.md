@@ -1,4 +1,4 @@
-# Redis
+# Postgres
 
 A simple module to start a postgres service.
 
