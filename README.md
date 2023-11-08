@@ -13,7 +13,8 @@ Dagger modules made with ❤️ by Quartz.
 | [Scaleway](./scaleway)           | ⏳      |
 | [Postgres](./postgres)           | ✅      |
 | [Redis](./redis)                 | ✅      |
-| [Launcher](./launcher)           | ⏳      |
+| [Launcher](./launcher)           | ✅      |
+| [MinIO](./minio)                 | ⏳      |
 
 ⚠️ These modules are experimental, feel free to open an issue for any requests or bug report.
 
