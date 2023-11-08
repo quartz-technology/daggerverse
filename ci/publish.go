@@ -4,14 +4,12 @@ import (
 	"context"
 )
 
-func (c *Ci) Publish(ctx context.Context) error {
+func (c *Ci) Publish(ctx context.Context) (string, error) {
 	//modules := source()
 
 	//	directories := []string{"golang", "golangci-lint", "node", "redis", "postgres", "launcher"}
 
 	//	eg, gctx := errgroup.WithContext(ctx)
 
-	_, err := dag.Launcher().Publish(ctx, source(), LauncherPublishOpts{Path: "launcher"})
-
-	return err
+	return dag.Launcher().Publish(ctx, repo(), LauncherPublishOpts{Path: "launcher"})
 }

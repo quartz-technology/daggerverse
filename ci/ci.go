@@ -7,6 +7,12 @@ import (
 
 type Ci struct{}
 
+func repo() *Directory {
+	return dag.
+		Host().
+		Directory(root())
+}
+
 func source() *Directory {
 	return dag.
 		Host().
