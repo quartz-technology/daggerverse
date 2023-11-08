@@ -6,12 +6,12 @@ Dagger modules made with ❤️ by Quartz.
 |----------------------------------|--------|
 | [Node](./node)                   | ✅      |
 | [Golang](./golang)               | ✅      |
-| [Golangci-lint](./golangci-lint) | 🚧     |
+| [Golangci-lint](./golangci-lint) | ✅      |
 | [Python](./python)               | ⏳      |
 | [Deno](./deno)                   | ⏳      |
 | [Bun](./bun)                     | ⏳      |
 | [Scaleway](./scaleway)           | ⏳      |
-| [Postgres](./postgres)           | ⏳      |
+| [Postgres](./postgres)           | ✅      |
 | [Redis](./redis)                 | ✅      |
 
 ⚠️ These modules are experimental, feel free to open an issue for any requests or bug report.
