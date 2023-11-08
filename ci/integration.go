@@ -22,5 +22,9 @@ func (i *IntegrationTest) Run(ctx context.Context) error {
 		return i.Redis(gctx)
 	})
 
+	eg.Go(func() error {
+		return i.Postgres(gctx)
+	})
+
 	return eg.Wait()
 }
