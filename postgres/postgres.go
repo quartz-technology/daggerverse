@@ -13,6 +13,7 @@ type Postgres struct {
 	Version     string
 	ConfigFile  *File
 	InitScripts []*InitScript
+	Cache       bool
 }
 
 // WithCredential adds a user and a password configuration to the postgresSQL
@@ -38,6 +39,12 @@ func (p *Postgres) WithPort(port int) *Postgres {
 // database's name will be the user's one.
 func (p *Postgres) WithDatabaseName(name string) *Postgres {
 	p.Name = name
+
+	return p
+}
+
+func (p *Postgres) WithCache(cache bool) *Postgres {
+	p.Cache = cache
 
 	return p
 }

@@ -9,7 +9,10 @@ func (p *Postgres) Database() (*Container, error) {
 	ctr := dag.
 		Container().
 		From(fmt.Sprintf("postgres:%s", p.Version))
-	//WithMountedCache("/var/lib/postgresql/data", dag.CacheVolume("pg-data"))
+
+	if p.Cache {
+		ctr = ctr.WithMountedCache("/var/lib/postgresql/data", dag.CacheVolume("pg-data"))
+	}
 
 	// Set credential
 	if p.User == nil || p.Password == nil {

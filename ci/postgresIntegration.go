@@ -13,7 +13,8 @@ func (i *IntegrationTest) Postgres(ctx context.Context) error {
 		Postgres().
 		WithVersion("13").
 		WithCredential(user, password).
-		WithDatabaseName("daggerverse")
+		WithDatabaseName("daggerverse").
+		WithCache(false)
 
 	db := postgres.Database()
 
