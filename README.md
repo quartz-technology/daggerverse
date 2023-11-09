@@ -2,19 +2,16 @@
 
 Dagger modules made with ❤️ by Quartz.
 
-| Module                           | Status |
-|----------------------------------|--------|
-| [Node](./node)                   | ✅      |
-| [Golang](./golang)               | ✅      |
-| [Golangci-lint](./golangci-lint) | ✅      |
-| [Python](./python)               | ⏳      |
-| [Deno](./deno)                   | ⏳      |
-| [Bun](./bun)                     | ⏳      |
-| [Scaleway](./scaleway)           | ⏳      |
-| [Postgres](./postgres)           | ✅      |
-| [Redis](./redis)                 | ✅      |
-| [Launcher](./launcher)           | ✅      |
-| [MinIO](./minio)                 | ⏳      |
+| Module                           | Status | Module                 | Status |
+|----------------------------------|--------|------------------------|--------|
+| [Node](./node)                   | ✅      | [Golang](./golang)     | ✅      |
+| [Python](./python)               | ⏳      | [Rust](./rust)         | ⏳      |
+| [Deno](./deno)                   | ⏳      | [Bun](./bun)           | ⏳      |
+| [Minio](./minio)                 | ⏳      | [Postgres](./postgres) | ✅      |
+| [Golangci-lint](./golangci-lint) | ✅      | [Redis](./redis)       | ✅      |
+| [Scaleway](./scaleway)           | ⏳      | [Launcher](./launcher) | ✅      |
+| [Dagger](./dagger)               | ✅      |                        |        |
+
 
 ⚠️ These modules are experimental, feel free to open an issue for any requests or bug report.
 

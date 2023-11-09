@@ -7,7 +7,6 @@ import (
 
 // Client returns a configured client with user and password set.
 // Note: if you want to set the host, you can append this option on usage
-
 func (p *Postgres) Client() (*Container, error) {
 	cliOpts := []string{"/bin/sh", "-c", "psql"}
 
