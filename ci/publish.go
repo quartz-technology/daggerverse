@@ -10,7 +10,7 @@ import (
 func (c *Ci) Publish(ctx context.Context) (string, error) {
 	modules := repo()
 
-	directories := []string{"golang", "golangci-lint", "node", "redis", "postgres", "launcher"}
+	directories := []string{"golang", "golangci-lint", "node", "redis", "postgres", "launcher", "minio", "dagger"}
 
 	eg, gctx := errgroup.WithContext(ctx)
 
