@@ -7,7 +7,7 @@ Dagger modules made with ❤️ by Quartz.
 | [Node](./node)                   | ✅      | [Golang](./golang)     | ✅      |
 | [Python](./python)               | ⏳      | [Rust](./rust)         | ⏳      |
 | [Deno](./deno)                   | ⏳      | [Bun](./bun)           | ⏳      |
-| [Minio](./minio)                 | ⏳      | [Postgres](./postgres) | ✅      |
+| [Minio](./minio)                 | ✅      | [Postgres](./postgres) | ✅      |
 | [Golangci-lint](./golangci-lint) | ✅      | [Redis](./redis)       | ✅      |
 | [Scaleway](./scaleway)           | ⏳      | [Launcher](./launcher) | ✅      |
 | [Dagger](./dagger)               | ✅      |                        |        |
