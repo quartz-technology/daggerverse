@@ -25,7 +25,7 @@ func (c *Ci) Lint(ctx context.Context) error {
 		}
 	}
 
-	directories := []string{"golang", "golangci-lint", "node", "redis"}
+	directories := []string{"golang", "golangci-lint", "node", "redis", "postgres", "dagger", "minio", "launcher"}
 	for _, d := range directories {
 		eg.Go(lintFct(d))
 	}

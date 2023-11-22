@@ -22,8 +22,8 @@ jobs:
 
       - name: Install Dagger Zenith
         run: |
-          git clone https://github.com/dagger/dagger
-          cd ./dagger
+          git clone https://github.com/dagger/dagger dagger-zenith
+          cd ./dagger-zenith
           ./hack/dev
           sudo mv ./bin/dagger /usr/local/bin
 
