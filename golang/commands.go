@@ -15,10 +15,6 @@ func (g *Golang) Test() *Container {
 	return g.Exec([]string{"test"})
 }
 
-type BuildOpts struct {
-	Output string `doc:"Path to write the built binary"`
-}
-
 // Build returns the container with the built artifact.
 func (g *Golang) Build(
 	// Path to write the built binary
