@@ -2,6 +2,7 @@ package main
 
 type RedisShell struct{}
 
+// CLI returns a Container that runs the redis-cli command.
 func (m *RedisShell) Cli() *Container {
 	password := dag.SetSecret("redis-password", "foo123")
 
