@@ -3,10 +3,10 @@ import { dag, Container, Directory, object, func, field, Secret } from '@dagger.
 const yarnCachePath = "/usr/local/share/.cache/yarn"
 const npmCachePath = "/root/.npm"
 
-@object
+@object()
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Node {
-  @field
+  @field()
   ctr?: Container = undefined
 
   /**
@@ -14,7 +14,7 @@ class Node {
    *
    * @param version version to use
    */
-  @func
+  @func()
   withVersion(version: string): Node {
     if (!this.ctr) {
       this.ctr = dag.container()
@@ -32,7 +32,7 @@ class Node {
    *
    * @param ctr container to use in Node.
    */
-  @func
+  @func()
   withContainer(ctr: Container): Node {
     this.ctr = ctr
 
@@ -42,7 +42,7 @@ class Node {
   /**
    * Container returns Node container.
    */
-  @func
+  @func()
   container(): Container {
     return this.ctr
   }
@@ -52,7 +52,7 @@ class Node {
    *
    * @param source source code to add to the Node container
    */
-  @func
+  @func()
   withSource(source: Directory): Node {
     const workdir = "/src"
 
@@ -68,7 +68,7 @@ class Node {
   /**
    * WithYarn returns Node container with yarn configured as package manager.
    */
-  @func
+  @func()
   withYarn(): Node {
     this.ctr = this.ctr
       .withEntrypoint(["yarn"])
@@ -82,7 +82,7 @@ class Node {
   /**
    * WithNpm returns Node container with npm configured as package manager.
    */
-  @func
+  @func()
   withNpm(): Node {
     this.ctr = this.ctr
       .withEntrypoint(["npm"])
@@ -98,7 +98,7 @@ class Node {
    *
    * @param args arguments to execute
    */
-  @func
+  @func()
   run(args: string[]): Container {
     return this.ctr.withExec(args)
   }
@@ -106,7 +106,7 @@ class Node {
   /**
    * Start returns the output of the code executed.
    */
-  @func
+  @func()
   async start(): Promise<string> {
     return this.run(["run", "start"]).stdout()
   }
@@ -114,7 +114,7 @@ class Node {
   /**
    * Lint returns the output of the lint command.
    */
-  @func
+  @func()
   async lint(): Promise<string> {
     return this.run(["run", "lint"]).stdout()
   }
@@ -122,7 +122,7 @@ class Node {
   /**
    * Lint returns the output of the lint command.
    */
-  @func
+  @func()
   async test(): Promise<string> {
     return this.run(["run", "test"]).stdout()
   }
@@ -130,7 +130,7 @@ class Node {
   /**
    * Build returns the Container with the source built.
    */
-  @func
+  @func()
   build(): Node {
     this.ctr = this.run(["run", "build"])
 
@@ -145,7 +145,7 @@ class Node {
    * @param access access permission of the package
    * @param dryRun whether to do a dry run instead of an actual publish
    */
-  @func
+  @func()
   async publish(tokenSecret: Secret, version: string, access?: string, dryRun = false): Promise<string> {
     const token = await tokenSecret.plaintext()
     const npmrc = `//registry.npmjs.org/:_authToken=${token}
@@ -173,7 +173,7 @@ always-auth=true`
    *
    * @param pkgs packages to additionally install
    */
-  @func
+  @func()
   install(pkgs: string[]): Node {
     return this.withContainer(this.run(["install", ...pkgs]))
   }
