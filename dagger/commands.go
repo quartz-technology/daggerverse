@@ -8,11 +8,13 @@ import "context"
 func (c *CLI) Publish(
 	ctx context.Context,
 
-	// Specify a path to the module located in a subdirectory of the workdir
-	// (e.g., "./my-cool-module")
-	path Optional[string],
+	// +optional
+	// Specify a path to the module (default to ".")
+	module string,
 ) (string, error) {
-	module := path.GetOr(".")
+	if module == "" {
+		module = "."
+	}
 
 	return c.
 		Container().
