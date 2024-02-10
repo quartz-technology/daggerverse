@@ -9,38 +9,34 @@ type Minio struct {
 	Cache       bool
 }
 
-// WithVersion sets a version for Minio.
-func (m *Minio) WithVersion(version string) *Minio {
-	m.Version = version
+func New(
+	// version of Minio to use.
+	version string,
 
-	return m
-}
+	// port to listen to the server.
+	serverPort int,
 
-// WithConsolePort sets a port to listen to the console.
-func (m *Minio) WithConsolePort(port int) *Minio {
-	m.ConsolePort = port
+	// port to listen to the console.
+	consolePort int,
 
-	return m
-}
+	// +optional
+	// username to use.
+	username *Secret,
 
-// WithServerPort sets a port to listen to the server.
-func (m *Minio) WithServerPort(port int) *Minio {
-	m.ServerPort = port
+	// +optional
+	// username to use.
+	password *Secret,
 
-	return m
-}
-
-// WithCredential sets access and secret key in the CLI.
-func (m *Minio) WithCredential(username *Secret, password *Secret) *Minio {
-	m.Username = username
-	m.Password = password
-
-	return m
-}
-
-// WithCache enables long living storage on the server.
-func (m *Minio) WithCache(cache bool) *Minio {
-	m.Cache = cache
-
-	return m
+	// +optional
+	// cache enables long living storage on the server.
+	cache bool,
+) *Minio {
+	return &Minio{
+		Version:     version,
+		ServerPort:  serverPort,
+		ConsolePort: consolePort,
+		Username:    username,
+		Password:    password,
+		Cache:       cache,
+	}
 }
