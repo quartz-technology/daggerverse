@@ -57,9 +57,9 @@ func (c *MC) AliasRemove(alias string) *MC {
 }
 
 // List returns a list of all object gave at the target.
-func (c *MC) List(ctx context.Context, target Optional[string]) (string, error) {
+func (c *MC) List(ctx context.Context, target string) (string, error) {
 	return c.Ctr.
-		WithExec([]string{"ls", target.GetOr("")}).
+		WithExec([]string{"ls", target}).
 		Stdout(ctx)
 }
 
