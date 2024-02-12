@@ -1,0 +1,5 @@
+{
+  "name": "cypress",
+  "sdk": "typescript",
+  "engineVersion": "v0.9.9"
+}
