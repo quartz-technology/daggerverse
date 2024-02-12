@@ -1,0 +1,44 @@
+{
+	"folders": [
+		{
+			"path": ""
+		},
+		{
+			"path": "dagger"
+		},
+		{
+			"path": "ci"
+		},
+		{
+			"path": "golang"
+		},
+		{
+			"path": "golangci-lint"
+		},
+		{
+			"path": "launcher"
+		},
+		{
+			"path": "minio"
+		},
+		{
+			"path": "node"
+		},
+		{
+			"path": "postgres"
+		},
+		{
+			"path": "redis"
+		},
+		{
+			"path": "redis-shell"
+		},
+		{
+			"path": "rust"
+		},
+		{
+			"path": "eslint"
+		},
+	],
+	"settings": {}
+}
