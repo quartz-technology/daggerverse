@@ -1,0 +1,5 @@
+{
+  "name": "nginx",
+  "sdk": "typescript",
+  "engineVersion": "v0.9.9"
+}
