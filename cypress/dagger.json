@@ -1,5 +1,16 @@
 {
   "name": "cypress",
   "sdk": "typescript",
+  "dependencies": [
+    {
+      "name": "node",
+      "source": "github.com/dagger/dagger/sdk/typescript/dev/node@fca9e788f6d605ef9d256beace4656c11d7f6fe5"
+    },
+    {
+      "name": "nginx",
+      "source": "github.com/quartz-technology/daggerverse/nginx@7a6055e54fd0a7e1a8a7a7f8c7b146dfa0c90ada"
+    }
+  ],
+  "source": ".",
   "engineVersion": "v0.9.9"
 }
