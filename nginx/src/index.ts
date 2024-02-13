@@ -15,11 +15,14 @@ server {
 
 @object()
 class Nginx {
+  /**
+   * Nginx version to use (default to 1.25.3)
+   */
   @field()
   version: string = "1.25.3"
 
   /**
-   * HTTML source files
+   * HTML source files
    */
   @field()
   source: Directory
