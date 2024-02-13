@@ -1,27 +1,53 @@
-import { dag, Container, Directory, object, func } from "@dagger.io/dagger"
+import { dag, Container, Directory, object, func, field } from "@dagger.io/dagger"
 
 @object()
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Cypress {
   /**
-   * example usage: "dagger call container-echo --string-arg yo stdout"
+   * The directory containing the cypress tests.
    */
-  @func()
-  containerEcho(stringArg: string): Container {
-    return dag.container().from("alpine:latest").withExec(["echo", stringArg])
+  @field()
+  source: Directory;
+
+  /**
+   * The website contained in a container pre configured to expose as a service
+   * the website.
+   */
+  @field()
+  website: Container;
+
+  /**
+   * Port the website is exposed on.
+   */
+  @field()
+  port: number = 8080;
+
+  constructor(source: Directory, website: Container, port?: number) {
+    this.source = source;
+    this.website = website;
+    this.port = port ?? this.port
   }
 
   /**
-   * example usage: "dagger call grep-dir --directory-arg . --pattern GrepDir"
+   * Run e2e tests on cypress.
+   * 
+   * Example usage: `dagger call run`
    */
   @func()
-  async grepDir(directoryArg: Directory, pattern: string): Promise<string> {
+  async run(): Promise<string> {
+    return this.base().stdout();
+  }
+
+
+  @func()
+  base(): Container {
     return dag
       .container()
-      .from("alpine:latest")
-      .withMountedDirectory("/mnt", directoryArg)
-      .withWorkdir("/mnt")
-      .withExec(["grep", "-R", pattern, "."])
-      .stdout()
+      .from('cypress/included:13.6.2')
+      .withServiceBinding('website', this.website.asService())
+      .withDirectory('/e2e', this.source)
+      .withWorkdir('/e2e')
+      .withExec(['npm', 'install'], { skipEntrypoint: true })
+      .withExec(['--env', `BASE_URL=http://website:${this.port}`]);
   }
 }
