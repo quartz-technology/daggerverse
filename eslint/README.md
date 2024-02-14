@@ -21,4 +21,10 @@ dagger -m github.com/quartz-technology/daggerverse/eslint --files=<path> call co
 dagger -m github.com/quartz-technology/daggerverse/eslint --files=<path> call run stdout
 ```
 
+### Auto fixe your TypeScript files
+
+```shell
+dagger -m github.com/quartz-technology/daggerverse/eslint --files=<path> call fix -o <path>
+```
+
 Made with ❤️ by Quartz.
