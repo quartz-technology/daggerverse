@@ -1,0 +1,24 @@
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: '* {{.Body}}'
+kinds:
+  - label: Added
+  - label: Changed
+  - label: Deprecated
+  - label: Removed
+  - label: Fixed
+  - label: Security
+  - label: Dependencies
+footerFormat: |
+  Made with ❤️ by [Quartz](https://quartz.technology)
+newlines:
+  beforeChangelogVersion: 3
+  afterVersion: 1
+  beforeKind: 1
+  beforeFooterTemplate: 1
+envPrefix: CHANGIE_
