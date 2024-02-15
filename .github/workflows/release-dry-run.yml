@@ -3,6 +3,28 @@ name: Release Daggerverse modules (dry-run)
 on:
   push:
     branches:
-      - master
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
+  release-dry:
+    name: Run dry run publishing
+    runs-on: ubuntu-latest
+    env:
+      DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dagger
+        run: |
+          cd /usr/local
+          curl -sSL https://get-release.dagger.io/dagger | sh
+          dagger --version
+
+      - name: Run dry run publishing
+        run: |
+          dagger -m -m github.com/quartz-technology/daggerverse/daggerverse-cockpit call publish --repostory=. --dryRun --exclude="deprecated"  
