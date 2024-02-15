@@ -5,8 +5,8 @@ on:
     types: [published]
 
 jobs:
-  release-dry:
-    name: Run dry run publishing
+  release:
+    name: Release Daggerverse
     runs-on: ubuntu-latest
     env:
       DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
@@ -21,6 +21,6 @@ jobs:
           curl -L https://dl.dagger.io/dagger/install.sh | sh
           dagger version
 
-      - name: Run dry run publishing
+      - name: Run publishing
         run: |
           dagger -m github.com/quartz-technology/daggerverse/daggerverse-cockpit call publish --repository=. --exclude="deprecated"  

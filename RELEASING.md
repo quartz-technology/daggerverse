@@ -39,10 +39,12 @@ changie merge
 ## Tag the release
 
 ```shell
-git tag origin $VERSION
+export VERSION=$(changie latest)
+
+git tag $VERSION origin 
 git push origin $VERSION
 
-gh release create "Quartz Daggerverse - $VERSION" --draft --verify-tag --title "Quartz Daggerverse - $VERSION" --notes-files .changes/$VERSION.md
+gh release create "$VERSION" --draft --verify-tag --title "$VERSION" --notes-file .changes/$VERSION.md
 ``
 
 This will trigger the workflow to publish all modules to daggerverse.
