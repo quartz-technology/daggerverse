@@ -1,0 +1,7 @@
+name: Release Daggerverse modules
+
+on:
+  release:
+    types: [published]
+
+jobs:
