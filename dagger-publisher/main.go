@@ -3,26 +3,24 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 )
 
-type DaggerCli struct {
+type DaggerPublisher struct {
 	Container *Container
 }
 
-const DefaultVersion = "v0.9.10"
+const DefaultDaggerVersion = "0.9.10"
 
 func New(
-	// The module to use the Dagger CLI with
-	module *Directory,
-
 	// +optional
 	version string,
-) *DaggerCli {
+) *DaggerPublisher {
 	if version == "" {
-		version = DefaultVersion
+		version = DefaultDaggerVersion
 	}
 
-	return &DaggerCli{
+	return &DaggerPublisher{
 		Container: dag.
 			Container().
 			From("alpine:3.19.1").
@@ -31,37 +29,29 @@ func New(
 				"sh", "-c", 
 				fmt.Sprintf("curl -L https://dl.dagger.io/dagger/install.sh | %s sh", fmt.Sprintf("DAGGER_VERSION=%s", version)),
 			}).
-			WithWorkdir("/module").
-			WithDirectory("/module", module).
 			WithEntrypoint([]string{"/bin/dagger"}),
 	}
 }
 
 // Publish executes the publish command to upload the module
 // to the Daggerverse.
-func (d *DaggerCli) Publish(
+func (d *DaggerPublisher) Publish(
 	ctx context.Context,
+
+	// The repository to use the Dagger CLI on
+	repository *Directory,
+
+	// The path to the module to publish
+	// +optional
+	path string,
 ) (string, error) {
 	return d.
 		Container.
+		WithWorkdir("/module").
+		WithDirectory("/module", repository).
+		WithWorkdir(filepath.Join("/module", path)).
 		WithExec([]string{"publish"},
 			ContainerWithExecOpts{ExperimentalPrivilegedNesting: true},
 		).
-		Stdout(ctx)
-}
-
-// Call executes the call command and returns its result.
-func (d *DaggerCli) Call(
-	ctx context.Context,
-
-	args ...string,
-) (string, error) {
-	args = append([]string{"call"}, args...)
-
-	return d.
-		Container.
-		WithExec(
-			args,
-			ContainerWithExecOpts{ExperimentalPrivilegedNesting: true}).
 		Stdout(ctx)
 }

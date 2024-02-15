@@ -1,5 +1,5 @@
 {
-  "name": "dagger-cli",
+  "name": "dagger-publisher",
   "sdk": "go",
   "engineVersion": "v0.9.9"
 }
