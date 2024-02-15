@@ -9,8 +9,8 @@ Dagger modules made with ❤️ by Quartz.
 | [Deno](./deno)                   | ⏳      | [Bun](./bun)           | ⏳      |
 | [Minio](./minio)                 | ✅      | [Postgres](./postgres) | ✅      |
 | [Golangci-lint](./golangci-lint) | ✅      | [Redis](./redis)       | ✅      |
-| [Scaleway](./scaleway)           | ⏳      | [Launcher](./launcher) | ✅      |
-| [Dagger](./dagger)               | ✅      | [Eslint](./eslint)    | ✅      |
+| [Scaleway](./scaleway)           | ⏳      | [Eslint](./eslint)     | ✅      |
+| [Dagger Publisher](./dagger)     | ✅      |                        |         |
 
 
 ⚠️ These modules are experimental, feel free to open an issue for any requests or bug report.
