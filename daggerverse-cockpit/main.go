@@ -42,7 +42,7 @@ func (d *DaggerverseCockpit) Publish(
 		paths[i] = filepath.Dir(path)
 	}
 
-	if !dryRun {
+	if dryRun {
 		return paths, nil
 	}
 
@@ -50,6 +50,7 @@ func (d *DaggerverseCockpit) Publish(
 	eg, ctx := errgroup.WithContext(ctx)
 
 	for i, path := range paths {
+		i := i
 		path := path
 
 		eg.Go(func() error {
@@ -58,7 +59,12 @@ func (d *DaggerverseCockpit) Publish(
 				return err
 			}
 
-			paths[i] += fmt.Sprintf(" -> %s", strings.Split(result, "\n")[1])
+			// Retrieve the url of the module
+			logs := strings.Split(result, "\n")
+			url := strings.TrimSpace(logs[len(logs)-2])
+
+			// Add it to the output path
+			paths[i] += fmt.Sprintf(" published to: %s", url)
 
 			return nil
 		})
