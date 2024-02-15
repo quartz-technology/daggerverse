@@ -1,0 +1,12 @@
+{
+  "name": "daggerverse-cockpit",
+  "sdk": "go",
+  "dependencies": [
+    {
+      "name": "dagger-publisher",
+      "source": "github.com/quartz-technology/daggerverse/dagger-publisher@af0726993d27679ee9c32dc1a98f9e37efce5e8c"
+    }
+  ],
+  "source": ".",
+  "engineVersion": "v0.9.9"
+}
