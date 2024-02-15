@@ -15,21 +15,16 @@ git pull
 git fetch --all --tags
 ```
 
-## Store the current version
-
-```shell
-export VERSION=$(changie latest)
-
-# echo $VERSION
-```
-
 ## Update CHANGELOG
 
 ```shell
-git checkout -b release/bump-$VERSION
-
+# Batch changelor prior to opening the PR so the version
+# is bump in the right order
 changie batch patch
 changie merge
+
+export VERSION=$(changie latest)
+git checkout -b release/bump-$VERSION
 
 # Open the Changelog update PR and merge it if everything is okay.
 ```
@@ -39,13 +34,18 @@ changie merge
 ## Tag the release
 
 ```shell
+# Make sure you merged the changelog PR first
+git checkout main
+git pull
+
 export VERSION=$(changie latest)
+
 
 git tag $VERSION origin 
 git push origin $VERSION
 
 gh release create "$VERSION" --draft --verify-tag --title "$VERSION" --notes-file .changes/$VERSION.md
-``
+```
 
 This will trigger the workflow to publish all modules to daggerverse.
 
