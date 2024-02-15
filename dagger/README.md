@@ -2,6 +2,8 @@
 
 A dagger module to execute Dagger inside Dagger.
 
+⚠️ This module is outdated in favor of [`dagger-cli`](../dagger-cli/)
+
 ## Features
 
 | Command                               | Done |
