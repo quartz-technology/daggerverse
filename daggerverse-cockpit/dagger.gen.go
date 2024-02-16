@@ -6821,41 +6821,48 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 	switch parentName {
 	case "DaggerverseCockpit":
 		switch fnName {
-		case "ContainerEcho":
+		case "DocGenerator":
 			var parent DaggerverseCockpit
 			err = json.Unmarshal(parentJSON, &parent)
 			if err != nil {
 				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
 			}
-			var stringArg string
-			if inputArgs["stringArg"] != nil {
-				err = json.Unmarshal([]byte(inputArgs["stringArg"]), &stringArg)
+			var module *Directory
+			if inputArgs["module"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["module"]), &module)
 				if err != nil {
-					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg stringArg", err))
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg module", err))
 				}
 			}
-			return (*DaggerverseCockpit).ContainerEcho(&parent, stringArg), nil
-		case "GrepDir":
+			return (*DaggerverseCockpit).DocGenerator(&parent, ctx, module)
+		case "Publish":
 			var parent DaggerverseCockpit
 			err = json.Unmarshal(parentJSON, &parent)
 			if err != nil {
 				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
 			}
-			var directoryArg *Directory
-			if inputArgs["directoryArg"] != nil {
-				err = json.Unmarshal([]byte(inputArgs["directoryArg"]), &directoryArg)
+			var repository *Directory
+			if inputArgs["repository"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["repository"]), &repository)
 				if err != nil {
-					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg directoryArg", err))
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg repository", err))
 				}
 			}
-			var pattern string
-			if inputArgs["pattern"] != nil {
-				err = json.Unmarshal([]byte(inputArgs["pattern"]), &pattern)
+			var exclude []string
+			if inputArgs["exclude"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["exclude"]), &exclude)
 				if err != nil {
-					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg pattern", err))
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg exclude", err))
 				}
 			}
-			return (*DaggerverseCockpit).GrepDir(&parent, ctx, directoryArg, pattern)
+			var dryRun bool
+			if inputArgs["dryRun"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["dryRun"]), &dryRun)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg dryRun", err))
+				}
+			}
+			return (*DaggerverseCockpit).Publish(&parent, ctx, repository, exclude, dryRun)
 		default:
 			return nil, fmt.Errorf("unknown function %s", fnName)
 		}
@@ -6864,16 +6871,16 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 			WithObject(
 				dag.TypeDef().WithObject("DaggerverseCockpit").
 					WithFunction(
-						dag.Function("ContainerEcho",
-							dag.TypeDef().WithObject("Container")).
-							WithDescription("example usage: \"dagger call container-echo --string-arg yo stdout\"").
-							WithArg("stringArg", dag.TypeDef().WithKind(StringKind))).
+						dag.Function("DocGenerator",
+							dag.TypeDef().WithListOf(dag.TypeDef().WithKind(StringKind))).
+							WithArg("module", dag.TypeDef().WithObject("Directory"))).
 					WithFunction(
-						dag.Function("GrepDir",
-							dag.TypeDef().WithKind(StringKind)).
-							WithDescription("example usage: \"dagger call grep-dir --directory-arg . --pattern GrepDir\"").
-							WithArg("directoryArg", dag.TypeDef().WithObject("Directory")).
-							WithArg("pattern", dag.TypeDef().WithKind(StringKind)))), nil
+						dag.Function("Publish",
+							dag.TypeDef().WithListOf(dag.TypeDef().WithKind(StringKind))).
+							WithDescription("Publish loop through all your directory that contains a `dagger.json`\nand publish them to the daggerverse.").
+							WithArg("repository", dag.TypeDef().WithObject("Directory"), FunctionWithArgOpts{Description: "The repository that contains your dagger modules"}).
+							WithArg("exclude", dag.TypeDef().WithListOf(dag.TypeDef().WithKind(StringKind)).WithOptional(true), FunctionWithArgOpts{Description: "Excluse some directories from publishing\nIt's useful if you use this module from Dagger CLI."}).
+							WithArg("dryRun", dag.TypeDef().WithKind(BooleanKind).WithOptional(true), FunctionWithArgOpts{Description: "Only returns the path of the modules that shall be published"}))), nil
 	default:
 		return nil, fmt.Errorf("unknown object %s", parentName)
 	}
