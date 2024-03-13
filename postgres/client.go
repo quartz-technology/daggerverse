@@ -25,10 +25,6 @@ func (p *Postgres) Client() (*Container, error) {
 
 	cliOpts = append(cliOpts, "-U", "$PGUSER")
 
-	if p.Port == 0 {
-		p.Port = 5432
-	}
-
 	if p.Name != "" {
 		cliOpts = append(cliOpts, "-d", p.Name, "-p", strconv.Itoa(p.Port))
 	}

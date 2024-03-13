@@ -14,11 +14,6 @@ func (p *Postgres) Database() (*Container, error) {
 		ctr = ctr.WithMountedCache("/var/lib/postgresql/data", dag.CacheVolume("pg-data"))
 	}
 
-	// Set credential
-	if p.User == nil || p.Password == nil {
-		return nil, fmt.Errorf("start error: username and password required, call Withcredential before Start")
-	}
-
 	ctr = ctr.
 		WithSecretVariable("POSTGRES_USER", p.User).
 		WithSecretVariable("POSTGRES_PASSWORD", p.Password)
@@ -28,21 +23,15 @@ func (p *Postgres) Database() (*Container, error) {
 		ctr = ctr.WithEnvVariable("POSTGRES_DATABASE", p.Name)
 	}
 
+	// Set config files
 	if p.ConfigFile != nil {
 		ctr = ctr.WithFile("/etc/postgresql/postgresql.conf", p.ConfigFile)
 		startOpts = append(startOpts, "-c", "config_file=/etc/postgresql/postgresql.conf")
 	}
 
 	// Set init scripts
-	for _, script := range p.InitScripts {
-		ctr = ctr.WithMountedFile(
-			fmt.Sprintf("/docker-entrypoint-initdb.d/%s", script.Name),
-			script.File,
-		)
-	}
-
-	if p.Port == 0 {
-		p.Port = 5432
+	if p.InitScripts != nil {
+		ctr = ctr.WithMountedDirectory("/docker-entrypoint-initdb.d", p.InitScripts)
 	}
 
 	// Apply start opts
