@@ -4,8 +4,7 @@ A Cypress module to run your Cypress test on the project source.
 
 ## Usage
 
-:bulb: You can provide a Node project with a `build` command that output source
-on dist and the module will figure out a way to build and launch it.
+:bulb: You can provide a Node project with a `build` command that outputs the source on dist and the module will figure out a way to build and launch it.
 
 ### Run Cypress test on your project
 
