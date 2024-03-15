@@ -6,7 +6,11 @@ type Cli struct {
 	Ctr *Container
 }
 
-func (r *Redis) Cli(server *Service) (*Cli, error) {
+// CLI returns a new container running the Redis CLI connected to a redis Service.
+func (r *Redis) Cli(
+	// The Redis server to connect to.
+	server *Service,
+) (*Cli, error) {
 	ctr, err := r.Server()
 	if err != nil {
 		return nil, err

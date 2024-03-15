@@ -4,22 +4,37 @@ type Redis struct {
 	Port     int
 	Version  string
 	Password *Secret
+	Cache    bool
 }
 
-func (r *Redis) WithPort(port int) *Redis {
-	r.Port = port
+func NewRedis(
+	// The port to use for the Redis server.
+	//
+	//+optional
+	//+default=6379
+	port int,
 
-	return r
-}
+	// The version of the Redis server to use.
+	//
+	//+optional
+	//+default="7.2.4"
+	version string,
 
-func (r *Redis) WithVersion(version string) *Redis {
-	r.Version = version
+	// The password to use for the Redis server.
+	//
+	//+optional
+	password *Secret,
 
-	return r
-}
-
-func (r *Redis) WithPassword(password *Secret) *Redis {
-	r.Password = password
-
-	return r
+	// Enable data persistency by mounting a cache volume.
+	//
+	//+optional
+	//+default=false
+	cache bool,	
+) *Redis {
+	return &Redis{
+		Port:     port,
+		Version:  version,
+		Password: password,
+		Cache:    cache,
+	}
 }

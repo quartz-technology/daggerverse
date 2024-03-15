@@ -5,21 +5,21 @@ import (
 	"strconv"
 )
 
+// Server returns a new container running Redis a redis Server.
 func (r *Redis) Server() (*Container, error) {
 	ctr := dag.
 		Container().
 		From(fmt.Sprintf("bitnami/redis:%s", r.Version)).
-		WithUser("root").
-		WithMountedCache("/bitnami/redis/data", dag.CacheVolume("redis-data"))
+		WithUser("root")
+
+	if r.Cache  {
+		ctr = ctr.WithMountedCache("/bitnami/redis/data", dag.CacheVolume("redis-data"))
+	}
 
 	if r.Password != nil {
 		ctr = ctr.WithSecretVariable("REDIS_PASSWORD", r.Password)
 	} else {
 		ctr = ctr.WithEnvVariable("ALLOW_EMPTY_PASSWORD", "yes")
-	}
-
-	if r.Port == 0 {
-		r.Port = 6379
 	}
 
 	ctr = ctr.
