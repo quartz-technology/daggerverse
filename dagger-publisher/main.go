@@ -10,7 +10,7 @@ type DaggerPublisher struct {
 	Container *Container
 }
 
-const DefaultDaggerVersion = "0.9.10"
+const DefaultDaggerVersion = "0.10.2"
 
 func New(
 	// +optional

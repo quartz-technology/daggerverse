@@ -17,6 +17,6 @@ require (
 
 require (
 	github.com/iancoleman/strcase v0.3.0
-	github.com/stretchr/testify v1.8.3 // indirect
+	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/tidwall/gjson v1.17.1
 )

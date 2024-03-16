@@ -54,14 +54,10 @@ func (d *DaggerverseCockpit) Publish(
 		path := path
 
 		eg.Go(func() error {
-			result, err := dag.DaggerPublisher().Publish(ctx, repository, DaggerPublisherPublishOpts{Path: path})
+			url, err := d.CLI(ctx, "0.10.2").Publish(ctx, repository, path)
 			if err != nil {
-				return err
+				return fmt.Errorf("could not publish your dagger module in path %s: %w", path, err)
 			}
-
-			// Retrieve the url of the module
-			logs := strings.Split(result, "\n")
-			url := strings.TrimSpace(logs[len(logs)-2])
 
 			// Add it to the output path
 			paths[i] += fmt.Sprintf(" published to: %s", url)
