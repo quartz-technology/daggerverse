@@ -7,7 +7,7 @@ type Redis struct {
 	Cache    bool
 }
 
-func NewRedis(
+func New(
 	// The port to use for the Redis server.
 	//
 	//+optional
