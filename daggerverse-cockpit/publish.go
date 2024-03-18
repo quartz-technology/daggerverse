@@ -53,7 +53,7 @@ func (d *DaggerverseCockpit) Publish(
 		path := path
 
 		eg.Go(func() error {
-			url, err := d.CLI(ctx, "0.10.2").Publish(ctx, repository, path)
+			url, err := d.CLI("0.10.2").Publish(ctx, repository, path)
 			if err != nil {
 				return fmt.Errorf("could not publish your dagger module in path %s: %w", path, err)
 			}

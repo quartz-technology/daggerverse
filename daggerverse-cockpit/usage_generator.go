@@ -31,7 +31,7 @@ func (d *DaggerverseCockpit) UsageGenerator(
 
 	module *Directory,
 ) (*File, error) {
-	introspection, err := introspectModule(ctx, module)
+	introspection, err := d.introspectModule(ctx, module)
 	if err != nil {
 		return nil, fmt.Errorf("failed to introspect the module: %w", err)
 	}

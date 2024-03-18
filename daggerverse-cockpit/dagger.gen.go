@@ -25,9 +25,6 @@ type ContainerID = dagger.ContainerID
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID = dagger.CurrentModuleID
 
-// The `DaggerPublisherID` scalar type represents an identifier for an object of type DaggerPublisher.
-type DaggerPublisherID = dagger.DaggerPublisherID
-
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID = dagger.DirectoryID
 
@@ -214,11 +211,6 @@ type CurrentModule = dagger.CurrentModule
 // CurrentModuleWorkdirOpts contains options for CurrentModule.Workdir
 type CurrentModuleWorkdirOpts = dagger.CurrentModuleWorkdirOpts
 
-type DaggerPublisher = dagger.DaggerPublisher
-
-// DaggerPublisherPublishOpts contains options for DaggerPublisher.Publish
-type DaggerPublisherPublishOpts = dagger.DaggerPublisherPublishOpts
-
 // A directory.
 type Directory = dagger.Directory
 
@@ -349,9 +341,6 @@ type WithClientFunc = dagger.WithClientFunc
 
 // ContainerOpts contains options for Client.Container
 type ContainerOpts = dagger.ContainerOpts
-
-// DaggerPublisherOpts contains options for Client.DaggerPublisher
-type DaggerPublisherOpts = dagger.DaggerPublisherOpts
 
 // DirectoryOpts contains options for Client.Directory
 type DirectoryOpts = dagger.DirectoryOpts
@@ -529,6 +518,26 @@ func (r *DaggerverseCockpit) UnmarshalJSON(bs []byte) error {
 	return nil
 }
 
+func (r CLI) MarshalJSON() ([]byte, error) {
+	var concrete struct {
+		Container *Container
+	}
+	concrete.Container = r.Container
+	return json.Marshal(&concrete)
+}
+
+func (r *CLI) UnmarshalJSON(bs []byte) error {
+	var concrete struct {
+		Container *Container
+	}
+	err := json.Unmarshal(bs, &concrete)
+	if err != nil {
+		return err
+	}
+	r.Container = concrete.Container
+	return nil
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -590,6 +599,20 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 	switch parentName {
 	case "DaggerverseCockpit":
 		switch fnName {
+		case "UsageGenerator":
+			var parent DaggerverseCockpit
+			err = json.Unmarshal(parentJSON, &parent)
+			if err != nil {
+				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
+			}
+			var module *Directory
+			if inputArgs["module"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["module"]), &module)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg module", err))
+				}
+			}
+			return (*DaggerverseCockpit).UsageGenerator(&parent, ctx, module)
 		case "Publish":
 			var parent DaggerverseCockpit
 			err = json.Unmarshal(parentJSON, &parent)
@@ -618,8 +641,48 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 				}
 			}
 			return (*DaggerverseCockpit).Publish(&parent, ctx, repository, exclude, dryRun)
-		case "UsageGenerator":
+		case "CLI":
 			var parent DaggerverseCockpit
+			err = json.Unmarshal(parentJSON, &parent)
+			if err != nil {
+				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
+			}
+			var version string
+			if inputArgs["version"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["version"]), &version)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg version", err))
+				}
+			}
+			return (*DaggerverseCockpit).CLI(&parent, version), nil
+		default:
+			return nil, fmt.Errorf("unknown function %s", fnName)
+		}
+	case "CLI":
+		switch fnName {
+		case "Publish":
+			var parent CLI
+			err = json.Unmarshal(parentJSON, &parent)
+			if err != nil {
+				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
+			}
+			var repository *Directory
+			if inputArgs["repository"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["repository"]), &repository)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg repository", err))
+				}
+			}
+			var path string
+			if inputArgs["path"] != nil {
+				err = json.Unmarshal([]byte(inputArgs["path"]), &path)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg path", err))
+				}
+			}
+			return (*CLI).Publish(&parent, ctx, repository, path)
+		case "Develop":
+			var parent CLI
 			err = json.Unmarshal(parentJSON, &parent)
 			if err != nil {
 				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
@@ -631,14 +694,20 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg module", err))
 				}
 			}
-			return (*DaggerverseCockpit).UsageGenerator(&parent, ctx, module)
+			return (*CLI).Develop(&parent, ctx, module), nil
 		default:
 			return nil, fmt.Errorf("unknown function %s", fnName)
 		}
 	case "":
 		return dag.Module().
+			WithDescription("A utility module to manage your Daggerverse repository.\n\nDaggerverse Cockpit aims to provide a simple and easy to use interface to manage your Daggerverse repository.\nIt provides single commands action to publish all your modules, generate usage example, get a dagger CLI and more!\n").
 			WithObject(
 				dag.TypeDef().WithObject("DaggerverseCockpit").
+					WithFunction(
+						dag.Function("UsageGenerator",
+							dag.TypeDef().WithObject("File")).
+							WithDescription("UsageGenerator generates a simple usage documentation for a module.\n\nThis function is still in developement, it's a simple utility functions\nto simplify modules maintaing.\n\nUse it as a starting point for your module README but please, do not\nconsider it as a README generator.\n\nExample usage: dagger call usage-generator --module=. -o USAGE.md").
+							WithArg("module", dag.TypeDef().WithObject("Directory"))).
 					WithFunction(
 						dag.Function("Publish",
 							dag.TypeDef().WithListOf(dag.TypeDef().WithKind(StringKind))).
@@ -647,10 +716,24 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 							WithArg("exclude", dag.TypeDef().WithListOf(dag.TypeDef().WithKind(StringKind)).WithOptional(true), FunctionWithArgOpts{Description: "Excluse some directories from publishing\nIt's useful if you use this module from Dagger CLI."}).
 							WithArg("dryRun", dag.TypeDef().WithKind(BooleanKind).WithOptional(true), FunctionWithArgOpts{Description: "Only returns the path of the modules that shall be published"})).
 					WithFunction(
-						dag.Function("UsageGenerator",
-							dag.TypeDef().WithObject("File")).
-							WithDescription("UsageGenerator generates a simple usage documentation for a module.\n\nThis function is still in developement, it's a simple utility functions\nto simplify modules maintaing.\n\nUse it as a starting point for your module README but please, do not\nconsider it as a README generator.\n\nExample usage: dagger call usage-generator --module=. -o USAGE.md").
-							WithArg("module", dag.TypeDef().WithObject("Directory")))), nil
+						dag.Function("CLI",
+							dag.TypeDef().WithObject("CLI")).
+							WithDescription("CLI installs the Dagger CLI in a container and returns it.\n\nMake sure to set the `version` to the desired Dagger version.\nYou may also need to enable `Experimental Privileged Nesting` in your container to make it works.\n\nExample usage:\n\n\tdagger call cli --version=0.10.2 with-exec --args=\"version\" stdout").
+							WithArg("version", dag.TypeDef().WithKind(StringKind).WithOptional(true), FunctionWithArgOpts{DefaultValue: JSON("\"0.10.2\"")}))).
+			WithObject(
+				dag.TypeDef().WithObject("CLI", TypeDefWithObjectOpts{Description: "CLI is an abstraction to the Dagger CLI so you can use it inside a container\nfor high level management command."}).
+					WithFunction(
+						dag.Function("Publish",
+							dag.TypeDef().WithKind(StringKind)).
+							WithDescription("Publish executes the publish command to upload the module to the Daggerverse.\nThis function returns the URL of the published module.\nExample usage:\n dagger call cli publish --repository=.\n\nYou could also use it directly in your code:\n repository := // ... your module repository fetched from arguments or git\n url, err := dag.DaggerCockpit().CLI().Publish(ctx, repository, \".\")\n if err !=  nil {...} // Handle error\n fmt.Println(url)").
+							WithArg("repository", dag.TypeDef().WithObject("Directory"), FunctionWithArgOpts{Description: "The repository to use the Dagger CLI on.\nDagger expect the `.git` directories to be inside this directory.\nSpecify a subpath if your module is located in a child directory."}).
+							WithArg("path", dag.TypeDef().WithKind(StringKind).WithOptional(true), FunctionWithArgOpts{Description: "The path to the module to publish", DefaultValue: JSON("\".\"")})).
+					WithFunction(
+						dag.Function("Develop",
+							dag.TypeDef().WithObject("Directory")).
+							WithDescription("Develop executes the develop command to start a development environment for the module\nand returns its content.\n\nExample usage:\n dagger call cli develop --module=. -o .").
+							WithArg("module", dag.TypeDef().WithObject("Directory"), FunctionWithArgOpts{Description: "The module to use the Dagger CLI on."})).
+					WithField("Container", dag.TypeDef().WithObject("Container"), TypeDefWithFieldOpts{Description: "The Dagger CLI container"})), nil
 	default:
 		return nil, fmt.Errorf("unknown object %s", parentName)
 	}

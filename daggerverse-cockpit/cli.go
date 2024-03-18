@@ -22,8 +22,6 @@ type CLI struct {
 //
 //	dagger call cli --version=0.10.2 with-exec --args="version" stdout
 func (d *DaggerverseCockpit) CLI(
-	ctx context.Context,
-
 	//+optional
 	//+default="0.10.2"
 	version string,

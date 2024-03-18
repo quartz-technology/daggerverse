@@ -114,9 +114,6 @@ type ContainerID string
 // The `CurrentModuleID` scalar type represents an identifier for an object of type CurrentModule.
 type CurrentModuleID string
 
-// The `DaggerPublisherID` scalar type represents an identifier for an object of type DaggerPublisher.
-type DaggerPublisherID string
-
 // The `DirectoryID` scalar type represents an identifier for an object of type Directory.
 type DirectoryID string
 
@@ -1827,106 +1824,6 @@ func (r *CurrentModule) WorkdirFile(path string) *File {
 	return &File{
 		query: q,
 	}
-}
-
-type DaggerPublisher struct {
-	query *querybuilder.Selection
-
-	id      *DaggerPublisherID
-	publish *string
-}
-
-func (r *DaggerPublisher) WithGraphQLQuery(q *querybuilder.Selection) *DaggerPublisher {
-	return &DaggerPublisher{
-		query: q,
-	}
-}
-
-func (r *DaggerPublisher) Container() *Container {
-	q := r.query.Select("container")
-
-	return &Container{
-		query: q,
-	}
-}
-
-// A unique identifier for this DaggerPublisher.
-func (r *DaggerPublisher) ID(ctx context.Context) (DaggerPublisherID, error) {
-	if r.id != nil {
-		return *r.id, nil
-	}
-	q := r.query.Select("id")
-
-	var response DaggerPublisherID
-
-	q = q.Bind(&response)
-	return response, q.Execute(ctx)
-}
-
-// XXX_GraphQLType is an internal function. It returns the native GraphQL type name
-func (r *DaggerPublisher) XXX_GraphQLType() string {
-	return "DaggerPublisher"
-}
-
-// XXX_GraphQLIDType is an internal function. It returns the native GraphQL type name for the ID of this object
-func (r *DaggerPublisher) XXX_GraphQLIDType() string {
-	return "DaggerPublisherID"
-}
-
-// XXX_GraphQLID is an internal function. It returns the underlying type ID
-func (r *DaggerPublisher) XXX_GraphQLID(ctx context.Context) (string, error) {
-	id, err := r.ID(ctx)
-	if err != nil {
-		return "", err
-	}
-	return string(id), nil
-}
-
-func (r *DaggerPublisher) MarshalJSON() ([]byte, error) {
-	id, err := r.ID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(id)
-}
-func (r *DaggerPublisher) UnmarshalJSON(bs []byte) error {
-	var id string
-	err := json.Unmarshal(bs, &id)
-	if err != nil {
-		return err
-	}
-	*r = *dag.LoadDaggerPublisherFromID(DaggerPublisherID(id))
-	return nil
-}
-
-// DaggerPublisherPublishOpts contains options for DaggerPublisher.Publish
-type DaggerPublisherPublishOpts struct {
-	//
-	// The path to the module to publish
-	//
-	Path string
-}
-
-// Publish executes the publish command to upload the module
-// to the Daggerverse.
-func (r *DaggerPublisher) Publish(ctx context.Context, repository *Directory, opts ...DaggerPublisherPublishOpts) (string, error) {
-	assertNotNil("repository", repository)
-	if r.publish != nil {
-		return *r.publish, nil
-	}
-	q := r.query.Select("publish")
-	for i := len(opts) - 1; i >= 0; i-- {
-		// `path` optional argument
-		if !querybuilder.IsZeroValue(opts[i].Path) {
-			q = q.Arg("path", opts[i].Path)
-		}
-	}
-	q = q.Arg("repository", repository)
-
-	var response string
-
-	q = q.Bind(&response)
-	return response, q.Execute(ctx)
 }
 
 // A directory.
@@ -5389,25 +5286,6 @@ func (r *Client) CurrentTypeDefs(ctx context.Context) ([]TypeDef, error) {
 	return convert(response), nil
 }
 
-// DaggerPublisherOpts contains options for Client.DaggerPublisher
-type DaggerPublisherOpts struct {
-	Version string
-}
-
-func (r *Client) DaggerPublisher(opts ...DaggerPublisherOpts) *DaggerPublisher {
-	q := r.query.Select("daggerPublisher")
-	for i := len(opts) - 1; i >= 0; i-- {
-		// `version` optional argument
-		if !querybuilder.IsZeroValue(opts[i].Version) {
-			q = q.Arg("version", opts[i].Version)
-		}
-	}
-
-	return &DaggerPublisher{
-		query: q,
-	}
-}
-
 // The default platform of the engine.
 func (r *Client) DefaultPlatform(ctx context.Context) (Platform, error) {
 	q := r.query.Select("defaultPlatform")
@@ -5560,16 +5438,6 @@ func (r *Client) LoadCurrentModuleFromID(id CurrentModuleID) *CurrentModule {
 	q = q.Arg("id", id)
 
 	return &CurrentModule{
-		query: q,
-	}
-}
-
-// Load a DaggerPublisher from its ID.
-func (r *Client) LoadDaggerPublisherFromID(id DaggerPublisherID) *DaggerPublisher {
-	q := r.query.Select("loadDaggerPublisherFromID")
-	q = q.Arg("id", id)
-
-	return &DaggerPublisher{
 		query: q,
 	}
 }

@@ -23,13 +23,14 @@ type introspectionObject struct {
 	Functions   []introspectionFunction
 }
 
-func introspectModule(
+// IntrospectModule returns an structured representation of objects composing a module.
+func (d *DaggerverseCockpit) introspectModule(
 	ctx context.Context,
 	module *Directory,
 ) ([]introspectionObject, error) {
-	introspectionResult, err := dag.
-		DaggerPublisher().
-		Container().
+	introspectionResult, err := d.
+		CLI("10.0.2").
+		Container.
 		WithWorkdir("/app").
 		WithMountedDirectory("/app", module).
 		WithNewFile("/app/introspection.graphql", ContainerWithNewFileOpts{
@@ -52,7 +53,6 @@ func introspectModule(
 
 	return objects, nil
 }
-
 
 // introspectionQuery is a Dagger GraphQL query used to
 // introspect a module.
