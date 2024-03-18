@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 )
