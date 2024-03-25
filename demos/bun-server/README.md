@@ -26,9 +26,7 @@ This spins up 2 isolated development environments and runs concurrently inside D
 
 We then execute Postman queries to verify the dev application while the CI is running on its own.
 
-<video width="480" height="200" controls>
-  <source src="demos.mov" type="video/mp4">
-</video>
+![](https://imgur.com/a/t7ZhCYD)
 
 ## Run the project
 
