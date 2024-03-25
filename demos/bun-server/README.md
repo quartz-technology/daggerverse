@@ -31,6 +31,7 @@ We then execute Postman queries to verify the dev application while the CI is ru
     <source src="https://imgur.com/jFZIFy7.webm" type="video/webm">
 </video>
 
+If you cannot see the video, please visit [this link](https://imgur.com/jFZIFy7)
 
 ## Run the project
 
