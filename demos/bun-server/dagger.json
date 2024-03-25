@@ -1,0 +1,20 @@
+{
+  "name": "tier-app-ci",
+  "sdk": "typescript",
+  "dependencies": [
+    {
+      "name": "postgres",
+      "source": "github.com/quartz-technology/daggerverse/postgres@1cee4a6b5be8b5c1d146e053412a7dd70a35961f"
+    },
+    {
+      "name": "proxy",
+      "source": "github.com/kpenfound/dagger-modules/proxy@33bc3eef07555d9fd4c22b02ff5c008a71a649e7"
+    },
+    {
+      "name": "redis",
+      "source": "github.com/quartz-technology/daggerverse/redis@1cee4a6b5be8b5c1d146e053412a7dd70a35961f"
+    }
+  ],
+  "source": "dagger",
+  "engineVersion": "v0.10.2"
+}
