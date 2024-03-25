@@ -24,7 +24,7 @@ test    Runs the integration tests of the application in an isolate environment
 This demo available in [`demos.mov`](./demos.mov) shows how to run your CI and your local application at the same time.
 This spins up 2 isolated development environments and runs concurrently inside Dagger.
 
-We then execute Postman queries to verify the dev application while the CI is running on its won.
+We then execute Postman queries to verify the dev application while the CI is running on its own.
 
 <video width="480" height="200" controls>
   <source src="demos.mov" type="video/mp4">
