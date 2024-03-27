@@ -27,4 +27,4 @@ jobs:
 
       - name: Run dry run publishing
         run: |
-          dagger -m github.com/quartz-technology/daggerverse/daggerverse-cockpit call publish --repository=. --dryRun --exclude="deprecated"  
+          dagger -m github.com/quartz-technology/daggerverse/daggerverse-cockpit call publish --repository=. --dryRun --exclude="deprecated","demos"  
