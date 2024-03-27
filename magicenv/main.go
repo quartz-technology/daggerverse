@@ -47,7 +47,7 @@ func (m *Magicenv) LoadEnv(
 
 	// Inject all the variables as secret
 	for key, value := range envMap {
-		ctr = ctr.WithEnvVariable(key, value)
+		ctr = ctr.WithEnvVariable(key, value, ContainerWithEnvVariableOpts{ Expand: true })
 	}
 
 	return ctr, nil

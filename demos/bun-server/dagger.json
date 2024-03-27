@@ -4,7 +4,7 @@
   "dependencies": [
     {
       "name": "magicenv",
-      "source": "github.com/quartz-technology/daggerverse/magicenv@de3995e8025bd0401518396979637286ecf82ab9"
+      "source": "github.com/quartz-technology/daggerverse/magicenv@d6fa562d77d1daf8d92ea6fa0aadd1c9c5715206"
     },
     {
       "name": "postgres",
