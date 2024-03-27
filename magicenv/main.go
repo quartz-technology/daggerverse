@@ -30,7 +30,7 @@ func (m *Magicenv) LoadEnv(
 	// The path to the environment file to load.
 	//
 	//+optional
-	//+default=.env
+	//+default=".env"
 	path string,
 ) (*Container, error) {
 	// Get the content of the .env file

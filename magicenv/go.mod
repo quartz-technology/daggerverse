@@ -11,6 +11,6 @@ require (
 )
 
 require (
-	github.com/hashicorp/go-envparse v0.1.0 // indirect
+	github.com/hashicorp/go-envparse v0.1.0
 	github.com/stretchr/testify v1.9.0 // indirect
 )
