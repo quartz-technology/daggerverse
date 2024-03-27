@@ -21,7 +21,7 @@ type Magicenv struct{}
 
 // Load environment from a .env or .envrc type of tile and inject it into a container.
 //
-// All variables are loaded as secret since we cannot guarantee the security of the file.
+// All variables are loaded as plaintext so be careful with sensitive secrets.
 func (m *Magicenv) LoadEnv(
 	ctx context.Context,
 
@@ -47,7 +47,7 @@ func (m *Magicenv) LoadEnv(
 
 	// Inject all the variables as secret
 	for key, value := range envMap {
-		ctr = ctr.WithSecretVariable(key, dag.SetSecret(key, value))
+		ctr = ctr.WithEnvVariable(key, value)
 	}
 
 	return ctr, nil

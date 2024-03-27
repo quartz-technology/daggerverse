@@ -3,6 +3,10 @@
   "sdk": "typescript",
   "dependencies": [
     {
+      "name": "magicenv",
+      "source": "github.com/quartz-technology/daggerverse/magicenv@de3995e8025bd0401518396979637286ecf82ab9"
+    },
+    {
       "name": "postgres",
       "source": "github.com/quartz-technology/daggerverse/postgres@1cee4a6b5be8b5c1d146e053412a7dd70a35961f"
     },
