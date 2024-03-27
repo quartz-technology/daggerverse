@@ -1,3 +1,11 @@
+// A simple Dagger module to spawn and manage a Redis server.
+//
+// This module is designed for development and CI purposes only, do not use it to host a production server.
+// The module implements a server and a client that can work together.
+//
+// You can use it to run a local Redis server but also in your CI pipeline to test your application
+// with integrations tests.
+
 package main
 
 type Redis struct {

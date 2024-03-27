@@ -1,7 +1,15 @@
-import { dag, Container, Directory, object, func, field, Service } from '@dagger.io/dagger';
+/**
+ * A Cypress module service to run e2e tests without local installation.
+ * 
+ * The module takes your cypress tests and run them in a container that point to your website.
+ * It's super useful to run e2e tests in a dagger CI.
+ * 
+ * Warning: The module is still a work in progress and may lack of features.
+ */
+
+import { dag, Directory, object, func, field, Service } from '@dagger.io/dagger';
 
 @object()
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Cypress {
   /**
    * The directory containing the cypress tests.

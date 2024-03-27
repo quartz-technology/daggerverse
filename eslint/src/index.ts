@@ -1,3 +1,10 @@
+/**
+ * A EsLint module service to lint and fix your code without local installation.
+ * 
+ * You can use it to lint any typescript files in your project.
+ * It does not support custom configuration files.
+ */
+
 import {
   dag,
   Container,
@@ -8,7 +15,6 @@ import {
 } from "@dagger.io/dagger";
 
 @object()
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class Eslint {
   /**
    * The version of eslint to use (default to: 8.56.0).
