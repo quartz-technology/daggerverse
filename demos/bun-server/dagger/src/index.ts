@@ -95,8 +95,6 @@ class TierAppCi {
     // Load the environment variables from the local environment (.envrc)
     this.ctr = dag.magicenv().loadEnv(this.ctr, { path: ".envrc" });
 
-    console.log(await Promise.all((await this.ctr.envVariables()).map(async (v) => await v.name() + "=" + await v.value())))
-
     // Create the services from the environment set locally
     const db = this.infra().postgres(
       dag.setSecret("dbUser", await this.ctr.envVariable("DB_USER")),
