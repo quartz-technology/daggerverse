@@ -15,7 +15,15 @@ class Node {
   @func()
   ctr: Container;
 
-  constructor(source: Directory, packageManager: string = "NPM", version: string = "20.9.0") {
+  constructor(source: Directory, packageManager?: string, version?: string) {
+    if (!packageManager) {
+      packageManager = PackageManager.NPM;
+    }
+
+    if (!version) {
+      version = "20.9.0"; // LTS
+    }
+
     this.ctr = dag
       .container()
       .from(`node:${version}`)
