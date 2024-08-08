@@ -49,7 +49,7 @@ class Node {
 
   @func()
   run(args: string[]): Container {
-    return this.ctr.withExec(args);
+    return this.ctr.withExec(args, { useEntrypoint: true });
   }
 
   @func()
@@ -77,9 +77,9 @@ class Node {
   @func()
   install(pkgs?: string[]): Node {
     if (!pkgs) {
-      this.ctr = this.ctr.withExec(["install"]);
+      this.ctr = this.ctr.withExec(["install"], { useEntrypoint: true });
     } else {
-      this.ctr = this.ctr.withExec(["install", ...pkgs]);
+      this.ctr = this.ctr.withExec(["install", ...pkgs], { useEntrypoint: true });
     }
 
     return this;
