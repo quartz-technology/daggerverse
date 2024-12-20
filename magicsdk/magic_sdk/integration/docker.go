@@ -62,6 +62,8 @@ func (d *Docker) Invoke(ctx context.Context, invocation *invocation.Invocation) 
 				return nil, fmt.Errorf("failed to unmarshal parent object: %w", err)
 			}
 
+			fmt.Println(invocation.ParentJSON)
+
 			return (*Docker).Build(&parent, ctx)
 		}
 	default: 
