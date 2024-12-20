@@ -14,6 +14,8 @@ type Integrations map[string]Integration
 type Integration interface {
 	Exist() bool
 
+	Description() string
+
 	New(invocation *invocation.Invocation) Integration
 
 	TypeDef() *dagger.TypeDef

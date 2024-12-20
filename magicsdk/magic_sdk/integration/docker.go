@@ -29,6 +29,10 @@ func DockerIntegration(code *codebase.Codebase) (Integration, error) {
 	}, nil
 }
 
+func (d *Docker) Description() string {
+	return "Access docker functions"
+}
+
 func (d *Docker) Exist() bool {
 	return d.supported
 }

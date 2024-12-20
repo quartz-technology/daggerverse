@@ -15,8 +15,8 @@ import (
 )
 
 type Module struct {
-	name string
-	codebase *codebase.Codebase
+	name         string
+	codebase     *codebase.Codebase
 	integrations integration.Integrations
 }
 
@@ -32,8 +32,8 @@ func Build(name string, path string) (*Module, error) {
 	}
 
 	return &Module{
-		name: name,
-		codebase: codebase,
+		name:         name,
+		codebase:     codebase,
 		integrations: integrations,
 	}, nil
 }
@@ -45,6 +45,7 @@ func (m *Module) TypeDef() *dagger.Module {
 	for name, integration := range m.integrations {
 		mainObject = mainObject.WithFunction(
 			dag.Function(name, dag.TypeDef().WithObject(name)).
+				WithDescription(integration.Description()).
 				WithArg("dir", dag.TypeDef().WithObject("Directory").WithOptional(true), dagger.FunctionWithArgOpts{
 					DefaultPath: "/",
 				}),
