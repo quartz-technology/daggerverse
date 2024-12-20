@@ -43,7 +43,12 @@ func (m *Module) TypeDef() *dagger.Module {
 
 	mainObject := dag.TypeDef().WithObject(m.name)
 	for name, integration := range m.integrations {
-		mainObject = mainObject.WithFunction(dag.Function(name, dag.TypeDef().WithObject(name)))
+		mainObject = mainObject.WithFunction(
+			dag.Function(name, dag.TypeDef().WithObject(name)).
+				WithArg("dir", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{
+					DefaultPath: "/",
+				}),
+		)
 
 		mod = mod.WithObject(integration.TypeDef())
 	}
@@ -132,7 +137,15 @@ func (m *Module) Invoke(ctx context.Context, invocation *invocation.Invocation) 
 	case m.name:
 		switch invocation.FnName {
 		case "Docker":
-			return m.integrations["Docker"], nil
+			var dir *dagger.Directory
+			if invocation.InputArgs["app"] != nil {
+				err = json.Unmarshal([]byte(invocation.InputArgs["app"]), &dir)
+				if err != nil {
+					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg dir", err))
+				}
+			}
+
+			return m.integrations["Docker"].New(dir), nil
 		default:
 			return nil, fmt.Errorf("unknown function %s", invocation.FnName)
 		}

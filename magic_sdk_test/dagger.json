@@ -1,5 +1,5 @@
 {
   "name": "test",
   "engineVersion": "v0.15.1",
-  "sdk": "../magicsdk"
+  "sdk": "github.com/quartz-technology/daggerverse/magicsdk"
 }

@@ -12,6 +12,8 @@ import (
 )
 
 type Docker struct {
+	Dir *dagger.Directory
+
 	supported bool
 }
 
@@ -40,22 +42,18 @@ func (d *Docker) TypeDef() *dagger.TypeDef {
 		)
 }
 
+func (d *Docker) New(dir *dagger.Directory) Integration {
+	return &Docker{
+		Dir: dir,
+	}
+}
+
 func (d *Docker) Build(ctx context.Context) (*dagger.Container, error) {
-	return dag.Container().From("alpine").WithExec([]string{"echo", "Hello from Docker!"}), nil
+	return dag.Container().From("alpine").WithDirectory("/app", d.Dir), nil
 }
 
 func (d *Docker) Invoke(ctx context.Context, invocation *invocation.Invocation) (_ any, err error) {
 	switch invocation.FnName {
-	case "":
-		{
-			var parent Docker
-			err = json.Unmarshal(invocation.ParentJSON, &parent)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal parent object: %w", err)
-			}
-
-			return &Docker{}, nil
-		}
 	case "Build":
 		{
 			var parent Docker

@@ -14,6 +14,8 @@ type Integrations map[string]Integration
 type Integration interface {
 	Exist() bool
 
+	New(dir *dagger.Directory) Integration
+
 	TypeDef() *dagger.TypeDef
 
 	Invoke(ctx context.Context, invocation *invocation.Invocation) (_ any, err error)
