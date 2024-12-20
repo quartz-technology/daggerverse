@@ -45,7 +45,7 @@ func (m *Module) TypeDef() *dagger.Module {
 	for name, integration := range m.integrations {
 		mainObject = mainObject.WithFunction(
 			dag.Function(name, dag.TypeDef().WithObject(name)).
-				WithArg("dir", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{
+				WithArg("dir", dag.TypeDef().WithObject("Directory").WithOptional(true), dagger.FunctionWithArgOpts{
 					DefaultPath: "/",
 				}),
 		)
