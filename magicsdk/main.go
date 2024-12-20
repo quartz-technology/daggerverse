@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dagger/magicsdk/internal/dagger"
+	"fmt"
 )
 
 type Magicsdk struct {
@@ -28,12 +29,17 @@ func (m *Magicsdk) ModuleRuntime(ctx context.Context, modSource *dagger.ModuleSo
 		WithExec([]string{"go", "build", "-o", "/src/magic_sdk", "."}).
 		File("/src/magic_sdk")
 
+	modulePath, err := modSource.SourceRootSubpath(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get module path: %w", err)
+	}
+
 	return dag.
 		Container().
 		From("golang:1.23.2-alpine").
 		WithWorkdir("/runtime").
 		WithFile("/runtime/magic_sdk", runtimeBin).
-		WithDirectory("/app", modSource.ContextDirectory()).
+		WithDirectory("/app", modSource.ContextDirectory().Directory(modulePath)).
 		WithEntrypoint([]string{"/runtime/magic_sdk"}), nil
 }
 
