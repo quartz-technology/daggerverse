@@ -14,7 +14,7 @@ type Integrations map[string]Integration
 type Integration interface {
 	Exist() bool
 
-	New(dir *dagger.Directory) Integration
+	New(invocation *invocation.Invocation) Integration
 
 	TypeDef() *dagger.TypeDef
 
@@ -31,19 +31,13 @@ func LoadIntegrations(code *codebase.Codebase) (Integrations, error) {
 	integrations := make(map[string]Integration)
 	
 	for name, integrationFct := range integrationsFuncs {
-		fmt.Println("trying to load integration", name)
-
 		integration, err := integrationFct(code)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load integration: %w", err)
 		}
 
 		if integration.Exist() {
-			fmt.Println("integration", name, "exists in that project")
-
 			integrations[name] = integration
-		} else {
-			fmt.Println("integration", name, "doesn't exist in that project")
 		}
 	}
 

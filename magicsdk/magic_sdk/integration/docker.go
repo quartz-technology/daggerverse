@@ -9,6 +9,7 @@ import (
 	"dagger.io/dagger/dag"
 	"dagger.io/magicsdk/codebase"
 	"dagger.io/magicsdk/invocation"
+	"dagger.io/magicsdk/utils"
 )
 
 type Docker struct {
@@ -38,35 +39,47 @@ func (d *Docker) TypeDef() *dagger.TypeDef {
 		WithObject("Docker").
 		WithFunction(
 			dag.Function("Build", dag.TypeDef().WithObject("Container")).
-				WithDescription("Build a container from a Dockerfile"),
+				WithDescription("Build a container the Dockerfile present in the app"),
 		)
 }
 
-func (d *Docker) New(dir *dagger.Directory) Integration {
+func (d *Docker) New(invocation *invocation.Invocation) Integration {
+	// Workaround to parse argument since `UnmarshalJSON` isn't generated for Dagger type in
+	// the client library.
+	// This should be fixed later to integrate a real MagicSDK
+	var dir *dagger.Directory
+
+	if invocation.InputArgs["dir"] != nil {
+		dir = utils.LoadDirectoryFromID([]byte(invocation.InputArgs["dir"]))
+	}
+
 	return &Docker{
 		Dir: dir,
 	}
 }
 
 func (d *Docker) Build(ctx context.Context) (*dagger.Container, error) {
-	return dag.Container().From("alpine").WithDirectory("/app", d.Dir), nil
+	return d.Dir.DockerBuild(), nil
 }
 
 func (d *Docker) Invoke(ctx context.Context, invocation *invocation.Invocation) (_ any, err error) {
 	switch invocation.FnName {
 	case "Build":
-		{
-			var parent Docker
-			err = json.Unmarshal(invocation.ParentJSON, &parent)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unmarshal parent object: %w", err)
-			}
-
-			fmt.Println(string(invocation.ParentJSON))
-
-			return (*Docker).Build(&parent, ctx)
+		// Workaround to parse argument since `UnmarshalJSON` isn't generated for Dagger type in
+		// the client library.
+		// This should be fixed later to integrate a real MagicSDK
+		var parentMap map[string]interface{}
+		err = json.Unmarshal(invocation.ParentJSON, &parentMap)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal parent object: %w", err)
 		}
-	default: 
+
+		parent := Docker{
+			Dir: dag.LoadDirectoryFromID(dagger.DirectoryID(parentMap["Dir"].(string))),
+		}
+
+		return (*Docker).Build(&parent, ctx)
+	default:
 		return nil, fmt.Errorf("unknown function %s", invocation.FnName)
 	}
 }

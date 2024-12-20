@@ -12,8 +12,6 @@ type Codebase struct {
 }
 
 func New(path string) (*Codebase, error) {
-	fmt.Printf("Reading codebase at %s\n", path)
-
 	dir, err := os.ReadDir(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read directory: %w", err)
@@ -27,8 +25,6 @@ func New(path string) (*Codebase, error) {
 
 func (c *Codebase) LookupFile(name string) (*os.File, error, bool) {
 	for _, entry := range c.dir {
-		fmt.Printf("Checking file %s\n", entry.Name())
-
 		if entry.Name() == name {
 			file, err := os.Open(c.Path + "/" + entry.Name())
 			if err != nil {

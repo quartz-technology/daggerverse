@@ -3,7 +3,11 @@ module dagger.io/magicsdk
 go 1.23.2
 
 require (
-	dagger.io/dagger v0.15.1 // indirect
+	dagger.io/dagger v0.15.1
+	github.com/vektah/gqlparser/v2 v2.5.19
+)
+
+require (
 	github.com/99designs/gqlgen v0.17.57 // indirect
 	github.com/Khan/genqlient v0.7.0 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
@@ -14,7 +18,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	github.com/vektah/gqlparser/v2 v2.5.19 // indirect
 	go.opentelemetry.io/otel v1.27.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.0.0-20240518090000-14441aefdf88 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.3.0 // indirect

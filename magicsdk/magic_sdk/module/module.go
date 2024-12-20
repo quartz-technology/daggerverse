@@ -133,27 +133,21 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 }
 
 func (m *Module) Invoke(ctx context.Context, invocation *invocation.Invocation) (_ any, err error) {
-	switch invocation.ParentName {
-	case m.name:
-		switch invocation.FnName {
-		case "Docker":
-			var dir *dagger.Directory
-			if invocation.InputArgs["app"] != nil {
-				err = json.Unmarshal([]byte(invocation.InputArgs["app"]), &dir)
-				if err != nil {
-					panic(fmt.Errorf("%s: %w", "failed to unmarshal input arg dir", err))
-				}
-			}
-
-			return m.integrations["Docker"].New(dir), nil
-		default:
-			return nil, fmt.Errorf("unknown function %s", invocation.FnName)
-		}
-	case "Docker":
-		return m.integrations["Docker"].Invoke(ctx, invocation)
-	case "":
+	// If it's an empty parent name, that means we need to handle the registration
+	if invocation.ParentName == "" {
 		return m.TypeDef(), nil
-	default:
-		return nil, fmt.Errorf("unknown object %s", invocation.ParentName)
 	}
+
+	// If it's a top-level invocation, we build the integration called.
+	if invocation.ParentName == m.name {
+		return m.integrations["Docker"].New(invocation), nil
+	}
+
+	// If it's a integration invocation, we need to retrieve it and call its function
+	integration, ok := m.integrations[invocation.ParentName]
+	if !ok {
+		return nil, fmt.Errorf("unknown integration %s", invocation.ParentName)
+	}
+
+	return integration.Invoke(ctx, invocation)
 }
