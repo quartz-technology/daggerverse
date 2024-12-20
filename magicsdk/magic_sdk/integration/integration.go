@@ -14,12 +14,17 @@ type Integrations map[string]Integration
 type Integration interface {
 	Exist() bool
 
+	// Description of the integration.
 	Description() string
 
+	// New creates a new instance of the integration based on the caller context.
 	New(invocation *invocation.Invocation) Integration
 
+	// TypeDef returns the type definition for the integration with 
+	// all functions and fields it provides.
 	TypeDef() *dagger.TypeDef
 
+	// Invoke the function of the integration called by the caller.
 	Invoke(ctx context.Context, invocation *invocation.Invocation) (_ any, err error)
 }
 
@@ -27,6 +32,7 @@ type integrationFunc func(code *codebase.Codebase) (Integration, error)
 
 var integrationsFuncs = map[string]integrationFunc{
 	"Docker": DockerIntegration,
+	"Go": GoIntegration,
 }
 
 func LoadIntegrations(code *codebase.Codebase) (Integrations, error) {
