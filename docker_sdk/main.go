@@ -49,9 +49,10 @@ func (m *Dockersdk) ModuleRuntime(ctx context.Context, modSource *dagger.ModuleS
 		return nil, fmt.Errorf("failed to get module path: %w", err)
 	}
 
-	sourceDir := modSource.ContextDirectory().Directory(modulePath)
-	if sourceDir == nil {
-		sourceDir = dag.Directory()
+	sourceDir := dag.Directory()
+	_, err = modSource.ContextDirectory().Directory(modulePath).Entries(ctx)
+	if err == nil {
+		sourceDir = modSource.ContextDirectory().Directory(modulePath)
 	}
 
 	return dag.
