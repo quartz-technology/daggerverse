@@ -17,14 +17,18 @@ func main() {
 
 	name, err := dag.CurrentModule().Name(ctx)
 	if err != nil {
-		panic(fmt.Errorf("failed to get current module name: %w", err))
+		fmt.Println(fmt.Errorf("failed to get user's codebase: %w", err))
+
+		os.Exit(2)
 	}
 
 	formattedName := strings.ToUpper(string(name[0])) + name[1:]
 
 	codebase, err := codebase.New()
 	if err != nil {
-		panic(fmt.Errorf("failed to get user's codebase: %w", err))
+		fmt.Println(fmt.Errorf("failed to get user's codebase: %w", err))
+
+		os.Exit(2)
 	}
 
 	mod := module.Build(formattedName, codebase)
