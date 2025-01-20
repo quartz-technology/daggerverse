@@ -49,12 +49,17 @@ func (m *Dockersdk) ModuleRuntime(ctx context.Context, modSource *dagger.ModuleS
 		return nil, fmt.Errorf("failed to get module path: %w", err)
 	}
 
+	sourceDir := modSource.ContextDirectory().Directory(modulePath)
+	if sourceDir == nil {
+		sourceDir = dag.Directory()
+	}
+
 	return dag.
 		Container().
 		From("golang:1.23.2-alpine").
 		WithWorkdir("/runtime").
 		WithFile("/runtime/magic_sdk", runtimeBin).
-		WithDirectory("/app", modSource.ContextDirectory().Directory(modulePath)).
+		WithDirectory("/app", sourceDir).
 		WithEntrypoint([]string{"/runtime/magic_sdk"}), nil
 }
 
