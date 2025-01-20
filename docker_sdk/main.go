@@ -62,3 +62,7 @@ func (m *Dockersdk) ModuleRuntime(ctx context.Context, modSource *dagger.ModuleS
 func (m *Dockersdk) Codegen(ctx context.Context, modSource *dagger.ModuleSource, introspectionJSON *dagger.File) (*dagger.GeneratedCode, error) {
 	return dag.GeneratedCode(dag.Directory()), nil
 }
+
+func (m *Dockersdk) Test(ctx context.Context, test string) (string, error) {
+	return test, nil
+}

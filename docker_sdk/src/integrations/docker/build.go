@@ -9,8 +9,11 @@ import (
 	"dagger.io/dockersdk/utils"
 )
 
-func (d *Docker) build(platform *dagger.Platform, target *string, dockerfile *string) *dagger.Container {
-	opts := dagger.DirectoryDockerBuildOpts{}
+func (d *Docker) build(platform *dagger.Platform, target *string, dockerfile *string, buildArgs []dagger.BuildArg, secrets []*dagger.Secret) *dagger.Container {
+	opts := dagger.DirectoryDockerBuildOpts{
+		BuildArgs: buildArgs,
+		Secrets:   secrets,
+	}
 
 	if platform != nil {
 		opts.Platform = *platform
@@ -30,11 +33,38 @@ func (d *Docker) build(platform *dagger.Platform, target *string, dockerfile *st
 func (d *Docker) buildFctTypeDef(ctx context.Context) (*dagger.Function, *dagger.TypeDef) {
 	typedef := dag.Function("Build", dag.TypeDef().WithObject("Container")).
 		WithDescription("Build a container from the Dockerfile in the current directory").
-		WithArg("dockerfile", dag.TypeDef().WithKind(dagger.TypeDefKindStringKind).WithOptional(true), dagger.FunctionWithArgOpts{
-			DefaultValue: utils.LoadDefaultValue(d.dockerfile.Filename()),
-			Description: "Path to the Dockerfile to use.",
-		})
+		WithArg("dockerfile",
+			dag.TypeDef().WithKind(dagger.TypeDefKindStringKind).WithOptional(true),
+			dagger.FunctionWithArgOpts{
+				DefaultValue: utils.LoadDefaultValue(d.dockerfile.Filename()),
+				Description:  "Path to the Dockerfile to use.",
+			})
 
+	/////
+	// Add the build arguments
+	for key, value := range d.dockerfile.Args() {
+		buildArgOpts := dagger.FunctionWithArgOpts{
+			Description: fmt.Sprintf("Set %s build argument", key),
+		}
+
+		if value != "" {
+			buildArgOpts.DefaultValue = utils.LoadDefaultValue(value)
+		}
+
+		typedef = typedef.WithArg(key, dag.TypeDef().WithKind(dagger.TypeDefKindStringKind), buildArgOpts)
+	}
+
+	//////
+	// Add the secrets arguments
+	for _, secret := range d.dockerfile.Secrets() {
+		typedef = typedef.WithArg(secret,
+			dag.TypeDef().WithObject("Secret"),
+			dagger.FunctionWithArgOpts{
+				Description: fmt.Sprintf("Set %s secret", secret),
+			})
+	}
+
+	/////
 	// Add the platform argument
 	defaultPlatformArgOpts := dagger.FunctionWithArgOpts{
 		Description: "Platform to build.",
@@ -55,6 +85,7 @@ func (d *Docker) buildFctTypeDef(ctx context.Context) (*dagger.Function, *dagger
 			defaultPlatformArgOpts,
 		)
 
+	/////
 	// If stages are declared in the Dockerfile, we add an enum and the stage option to the function.
 	if len(d.dockerfile.Stages()) != 0 {
 		stageTypeDef := dag.TypeDef().WithEnum(fmt.Sprintf("%sStage", d.name))

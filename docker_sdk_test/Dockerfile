@@ -1,4 +1,6 @@
-FROM golang:1.23.2-alpine AS app
+ARG BASE_IMAGE=golang:1.23.2-alpine
+
+FROM ${BASE_IMAGE} AS app
 
 WORKDIR /app
 
@@ -10,8 +12,13 @@ RUN go build -o /app/main .
 
 FROM golang:1.23.2-alpine AS runtime
 
+ARG BIN_NAME
+
 WORKDIR /runtime
 
-COPY --from=app /app/main /runtime/main
+COPY --from=app /app/main /runtime/${BIN_NAME}
 
-ENTRYPOINT ["/runtime/main"]
+RUN --mount=type=secret,id=my-super-secret \
+  cat /run/secrets/my-super-secret > /runtime/secret.txt
+
+ENTRYPOINT ["/runtime/${BIN_NAME}"]

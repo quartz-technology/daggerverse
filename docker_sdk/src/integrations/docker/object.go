@@ -24,7 +24,7 @@ type Docker struct {
 
 func New(name string, code *codebase.Codebase) object.Object {
 	return &Docker{
-		name: name,
+		name:       name,
 		dockerfile: code.Dockerfile(),
 	}
 }
@@ -84,31 +84,38 @@ func (d *Docker) New(input object.InputArgs) object.Object {
 func (d *Docker) Invoke(ctx context.Context, fnName string, input object.InputArgs) (object.Result, error) {
 	switch fnName {
 	case "Build":
-		var platform dagger.Platform
-		if input["platform"] != nil {
-			err := json.Unmarshal([]byte(input["platform"]), &platform)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", "failed to unmarshal input arg platform", err)
+		platform := utils.LoadArgument[dagger.Platform]("platform", input)
+		target := utils.LoadArgument[string]("target", input)
+		dockerfile := utils.LoadArgument[string]("dockerfile", input)
+
+		buildArgs := []dagger.BuildArg{}
+		for key := range d.dockerfile.Args() {
+			if input[key] != nil {
+				buildArgs = append(buildArgs, dagger.BuildArg{
+					Name:  key,
+					Value: utils.LoadArgument[string](key, input),
+				})
 			}
 		}
 
-		var target string
-		if input["target"] != nil {
-			err := json.Unmarshal([]byte(input["target"]), &target)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", "failed to unmarshal input arg target", err)
+		// To load secret we need to load the value first and then reassign a secret
+		// with the right value since it's obfuscated by the CLI.
+		// TODO: find a better way to do this.
+		secrets := []*dagger.Secret{}
+		for _, secretKey := range d.dockerfile.Secrets() {
+			if input[secretKey] != nil {
+				cliSecret := utils.LoadSecretFromID([]byte(input[secretKey]))
+
+				secretValue, err := cliSecret.Plaintext(ctx)
+				if err != nil {
+					return nil, fmt.Errorf("failed to add secret value: %w", err)
+				}
+
+				secrets = append(secrets, dag.SetSecret(secretKey, secretValue))
 			}
 		}
 
-		var dockerfile string
-		if input["dockerfile"] != nil {
-			err := json.Unmarshal([]byte(input["dockerfile"]), &dockerfile)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", "failed to unmarshal input arg dockerfile", err)
-			}
-		}
-
-		return d.build(&platform, &target, &dockerfile), nil
+		return d.build(&platform, &target, &dockerfile, buildArgs, secrets), nil
 	default:
 		return nil, fmt.Errorf("unknown function %s", fnName)
 	}
