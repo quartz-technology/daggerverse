@@ -1,0 +1,6 @@
+{
+  "name": "dockersdk",
+  "engineVersion": "v0.15.2",
+  "sdk": "go",
+  "source": "."
+}
