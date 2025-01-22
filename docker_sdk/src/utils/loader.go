@@ -3,7 +3,7 @@ package utils
 import (
 	"dagger.io/dagger"
 	"dagger.io/dagger/dag"
-	"dagger.io/dockersdk/integrations/object"
+	"dagger.io/dockersdk/module/object"
 
 	"encoding/json"
 	"fmt"

@@ -10,6 +10,11 @@ type State []byte
 type InputArgs map[string][]byte
 type Result any
 
+type Function interface  {
+	AddTypeDefToObject(context.Context, *dagger.Module, *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef)
+	Invoke(ctx context.Context, state State,input InputArgs) (Result, error)
+}
+
 type Object interface {
 	Name() string
 
@@ -21,5 +26,5 @@ type Object interface {
 
 	New(input InputArgs) Object
 
-	Invoke(ctx context.Context, fnName string, input InputArgs) (Result, error)
+	Invoke(ctx context.Context, state State, fnName string, input InputArgs) (Result, error)
 }

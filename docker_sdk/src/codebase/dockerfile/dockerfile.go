@@ -17,7 +17,7 @@ type Dockerfile struct {
 	secrets []string
 }
 
-func New(filename string, file *os.File) (*Dockerfile, error) {
+func NewDockerfile(filename string, file *os.File) (*Dockerfile, error) {
 	content, err := parser.Parse(file)
 	if err != nil {
 		return nil, err

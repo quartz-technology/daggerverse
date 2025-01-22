@@ -1,4 +1,4 @@
-package utils
+package module
 
 import (
 	"errors"
@@ -6,7 +6,8 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-func UnwrapError(rerr error) string {
+// Utility function during module invocation.
+func unwrapError(rerr error) string {
 	var gqlErr *gqlerror.Error
 	if errors.As(rerr, &gqlErr) {
 		return gqlErr.Message

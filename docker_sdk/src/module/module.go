@@ -8,26 +8,22 @@ import (
 
 	"dagger.io/dagger"
 	"dagger.io/dagger/dag"
-	"dagger.io/dockersdk/codebase"
-	"dagger.io/dockersdk/integrations/object"
-	"dagger.io/dockersdk/integrations/docker"
-	"dagger.io/dockersdk/utils"
+	"dagger.io/dockersdk/module/docker"
+	"dagger.io/dockersdk/module/object"
 )
 
 type Module struct {
 	name string
 
-	codebase *codebase.Codebase
 	objects  map[string]object.Object
 }
 
-func Build(name string, codebase *codebase.Codebase) *Module {
+func Build(name string, docker *docker.Docker) *Module {
 	return &Module{
-		name:     name,
-		codebase: codebase,
+		name:   name,
 		objects: map[string]object.Object{
 			// The default object for the docker SDK
-			"Docker": docker.New("Docker", codebase),
+			"Docker": docker,
 		},
 	}
 }
@@ -63,7 +59,7 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 	fnCall := dag.CurrentFunctionCall()
 	defer func() {
 		if rerr != nil {
-			if err := fnCall.ReturnError(ctx, dag.Error(utils.UnwrapError(rerr))); err != nil {
+			if err := fnCall.ReturnError(ctx, dag.Error(unwrapError(rerr))); err != nil {
 				fmt.Println("failed to return error:", err)
 			}
 		}
@@ -128,14 +124,14 @@ func (m *Module) invoke(ctx context.Context, parentName string, parentJSON objec
 
 	// If it's a top-level invocation, we build the object called.
 	if parentName == m.name {
-		return m.objects[fnName].New(input), nil
+			return m.objects[fnName].New(input), nil
 	}
 
-	// If it's an object invocation, we built the object and invoke the function
+	// If it's an object invocation, we build the docker SDK and invoke the function
 	object, err := m.objects[parentName].Load(parentJSON)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load object %s: %w", parentName, err)
+		return nil, fmt.Errorf("failed to load docker SDK module: %w", err)
 	}
 
-	return object.Invoke(ctx, fnName, input)
+	return object.Invoke(ctx, parentJSON, fnName, input)
 }
