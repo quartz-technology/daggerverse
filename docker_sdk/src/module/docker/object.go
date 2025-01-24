@@ -102,7 +102,7 @@ func (d *Docker) WithDockerfile(dockerfile *dockerfile.Dockerfile) *Docker {
 }
 
 func (d *Docker) WithService(service *dockercompose.Service) *Docker {
-	d.funcMap[service.Name()] = &serviceFunc{service: service}
+	d.funcMap[service.Name()] = &serviceFunc{d: d, service: service}
 
 	return d
 }

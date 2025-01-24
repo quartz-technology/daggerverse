@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      MESSAGE: "Hello from Docker Compose"
+    ports:
+      - "8080:8080"
+
+  gateway:
+    build: ./gateway
+    environment:
+      - MESSAGE
+    ports:
+      - "8081:8081"
+
+  redis:
+    image: bitnami/redis:latest
+    environment:
+      - REDIS_PASSWORD
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/bitnami/redis/data
+
+volumes:
+  redis_data:

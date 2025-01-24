@@ -25,7 +25,7 @@ func NewDockerCompose(ctx context.Context, filename string, content []byte) (*Do
 				Content: content,
 			},
 		},
-	}, loader.WithSkipValidation)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load %s: %w", filename, err)
 	}
