@@ -79,6 +79,11 @@ func (b *buildFunc) Invoke(ctx context.Context, state object.State, input object
 	return (*buildFunc).build(&buildFunc{d: docker}, &platform, &target, &dockerfile, buildArgs, secrets), nil
 }
 
+func (b *buildFunc) Arguments() []*object.FunctionArg {
+	// This method should never be called for this function
+	return nil
+}
+
 func (b *buildFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module, object *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef) {
 	typedef := dag.Function("Build", dag.TypeDef().WithObject("Container")).
 		WithDescription("Build a container from the Dockerfile in the current directory").

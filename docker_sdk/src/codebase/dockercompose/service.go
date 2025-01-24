@@ -107,6 +107,15 @@ func (s *Service) Ports() []int {
 		ports = append(ports, published)
 	}
 
+	for _, port := range s.s.Expose {
+		published, err := strconv.Atoi(port)
+		if err != nil {
+			fmt.Println(fmt.Errorf("failed to parse port published: %w, ignoring it", err))
+		}
+
+		ports = append(ports, published)
+	}
+
 	return ports
 }
 
@@ -144,9 +153,19 @@ func (s *Service) Volumes() ([]*Volume, []*Cache) {
 		case "volume":
 			caches = append(caches, &Cache{name: v.Source, path: v.Target})
 		case "bind":
-			volumes = append(volumes, &Volume{origin: v.Source, target: v.Target})
+			volumes = append(volumes, &Volume{origin: trimHostPath(v.Source), target: v.Target})
 		}
 	}
 
 	return volumes, caches
+}
+
+func (s *Service) DependsOn() []string{
+	dependentServices := []string{}
+
+	for key := range s.s.DependsOn {
+		dependentServices = append(dependentServices, key)
+	}
+
+	return dependentServices
 }

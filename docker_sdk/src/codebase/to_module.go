@@ -13,10 +13,7 @@ func (c *Codebase) ToModule(name string) *module.Module {
 	}
 
 	if c.dockercompose != nil {
-
-		for _, service := range c.dockercompose.Services() {
-			dockerModule = dockerModule.WithService(service)
-		}
+		dockerModule = dockerModule.WithDockerCompose(c.dockercompose)
 	}
 
 	return module.Build(name, dockerModule)

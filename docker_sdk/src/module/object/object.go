@@ -10,9 +10,16 @@ type State []byte
 type InputArgs map[string][]byte
 type Result any
 
+type FunctionArg struct {
+	Name string
+	Type *dagger.TypeDef
+	Opts dagger.FunctionWithArgOpts
+}
+
 type Function interface  {
 	AddTypeDefToObject(context.Context, *dagger.Module, *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef)
 	Invoke(ctx context.Context, state State,input InputArgs) (Result, error)
+	Arguments() ([]*FunctionArg)
 }
 
 type Object interface {

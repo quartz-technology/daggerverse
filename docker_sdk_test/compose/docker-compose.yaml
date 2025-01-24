@@ -1,5 +1,5 @@
 services:
-  mysql:
+  database:
     image: bitnami/mysql:latest
     environment:
       - MYSQL_ROOT_PASSWORD
@@ -11,7 +11,7 @@ services:
     volumes:
       - mysql_data:/bitnami/mysql/data
 
-  redis:
+  cache:
     image: bitnami/redis:latest
     environment:
       - REDIS_PASSWORD

@@ -46,6 +46,16 @@ func (d *DockerCompose) Services() []*Service {
 	return services
 }
 
+func (d *DockerCompose) GetService(name string) (*Service, error) {
+	for _, service := range d.Services() {
+		if service.Name() == name {
+			return service, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no such service: %s", name)
+}
+
 func (d *DockerCompose) String() string {
 	yaml, err := d.project.MarshalYAML()
 	if err != nil {

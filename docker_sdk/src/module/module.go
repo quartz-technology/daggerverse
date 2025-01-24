@@ -10,21 +10,30 @@ import (
 	"dagger.io/dagger/dag"
 	"dagger.io/dockersdk/module/docker"
 	"dagger.io/dockersdk/module/object"
+	"dagger.io/dockersdk/utils"
 )
 
 type Module struct {
 	name string
 
-	objects  map[string]object.Object
+	funcMap map[string]object.Function
+	objects map[string]object.Object
 }
 
 func Build(name string, docker *docker.Docker) *Module {
+	baseObjects := map[string]object.Object{
+		// The default object for the docker SDK
+		"Docker": docker,
+	}
+
+	objects := utils.MergeObjectsMap(baseObjects, docker.Deps())
+
 	return &Module{
-		name:   name,
-		objects: map[string]object.Object{
-			// The default object for the docker SDK
-			"Docker": docker,
+		name: name,
+		funcMap: map[string]object.Function{
+			"Docker": &dockerFunc{d: docker},
 		},
+		objects: objects,
 	}
 }
 
@@ -38,15 +47,12 @@ func (m *Module) typeDef(ctx context.Context) (*dagger.Module, error) {
 	entrypointObject := dag.TypeDef().
 		WithObject(m.name)
 
-	for name, obj := range m.objects {
-		entrypointObject = entrypointObject.WithFunction(
-			dag.Function(name, dag.TypeDef().WithObject(name)).
-				WithDescription(obj.Description()).
-				WithArg("dir", dag.TypeDef().WithObject("Directory").WithOptional(true), dagger.FunctionWithArgOpts{
-					DefaultPath: ".",
-				}),
-		)
+	for _, fct := range m.funcMap {
+		mod, entrypointObject = fct.AddTypeDefToObject(ctx, mod, entrypointObject)
 
+	}
+
+	for _, obj := range m.objects {
 		mod = mod.With(obj.AddTypeDef(ctx))
 	}
 
@@ -124,7 +130,7 @@ func (m *Module) invoke(ctx context.Context, parentName string, parentJSON objec
 
 	// If it's a top-level invocation, we build the object called.
 	if parentName == m.name {
-			return m.objects[fnName].New(input), nil
+		return m.funcMap[fnName].Invoke(ctx, parentJSON, input)
 	}
 
 	// If it's an object invocation, we build the docker SDK and invoke the function

@@ -1,18 +1,20 @@
-package docker
+package compose
 
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"dagger.io/dagger"
 	"dagger.io/dagger/dag"
 	"dagger.io/dockersdk/codebase/dockercompose"
 	"dagger.io/dockersdk/module/object"
+	"dagger.io/dockersdk/module/proxy"
 	"dagger.io/dockersdk/utils"
 )
 
 type serviceFunc struct {
-	d       *Docker
+	c       *Compose
 	service *dockercompose.Service
 }
 
@@ -30,6 +32,7 @@ func (s *serviceFunc) container(
 	mountedSecrets map[string]*dagger.Secret,
 	mountedVolumes map[string]*dagger.Directory,
 	caches map[string]string,
+	dependentServices map[string]*dagger.Container,
 ) (*dagger.Container, error) {
 	var ctr *dagger.Container
 
@@ -52,7 +55,7 @@ func (s *serviceFunc) container(
 			})
 		}
 
-		ctr = s.d.Dir.Directory(source.Dockerfile.Context).DockerBuild(buildOpts)
+		ctr = s.c.Dir.Directory(source.Dockerfile.Context).DockerBuild(buildOpts)
 	default:
 		return nil, fmt.Errorf("unknown source type %s", source.Type)
 	}
@@ -94,11 +97,48 @@ func (s *serviceFunc) container(
 		})
 	}
 
+	for name, service := range dependentServices {
+		ctr = ctr.WithServiceBinding(name, service.AsService())
+	}
+
 	return ctr, nil
 }
 
+func (s *serviceFunc) ToContainer(ctx context.Context, state object.State, input object.InputArgs) (*dagger.Container, error) {
+	ctrRes, err := s.Invoke(ctx, state, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to invoke service %s: %w", s.service.Name(), err)
+	}
+
+	ctr, ok := ctrRes.(*dagger.Container)
+	if !ok {
+		return nil, fmt.Errorf("expected container result, got %T", ctrRes)
+	}
+
+	return ctr, nil
+}
+
+func (s *serviceFunc) ToService(ctx context.Context, state object.State, input object.InputArgs) (*proxy.Service, error) {
+	ctr, err := s.ToContainer(ctx, state, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert service %s to container: %w", s.service.Name(), err)
+	}
+
+	ports := s.service.Ports()
+	if len(ports) == 0 {
+		return nil, fmt.Errorf("service %s has no ports", s.service.Name())
+	}
+
+	return &proxy.Service{
+		Service:  ctr.AsService(dagger.ContainerAsServiceOpts{UseEntrypoint: true}),
+		Name:     s.service.Name(),
+		Frontend: ports[0],
+		Backend:  ports[0],
+	}, nil
+}
+
 func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input object.InputArgs) (object.Result, error) {
-	docker, err := s.d.load(state)
+	compose, err := s.c.load(state)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load object state: %w", err)
 	}
@@ -149,7 +189,7 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 	volumes := map[string]*dagger.Directory{}
 	for _, volumePath := range mountedVolumePaths {
 		if input[volumePath.Name()] != nil {
-			volumes[volumePath.Target()] = utils.LoadDirectoryFromID([]byte(input["dir"]))
+			volumes[volumePath.Target()] = utils.LoadDirectoryFromID([]byte(input[volumePath.Name()]))
 		}
 	}
 
@@ -158,28 +198,57 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		caches[cache.Name()] = cache.Path()
 	}
 
+	dependentServices := map[string]*dagger.Container{}
+	for _, dependentServiceName := range s.service.DependsOn() {
+		dockerComposeService, err := s.c.dockercompose.GetService(dependentServiceName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get service %s that %s depends on", dependentServiceName, s.service.Name())
+		}
+
+		service := &serviceFunc{c: compose, service: dockerComposeService}
+		servicePrefix := fmt.Sprintf("%s_", dependentServiceName)
+
+		serviceInput := input
+		for argName, argValue := range input {
+			if strings.HasPrefix(argName, servicePrefix) {
+				serviceInput[strings.TrimPrefix(argName, servicePrefix)] = argValue
+			}
+		}
+
+		ctr, err := service.ToContainer(ctx, state, serviceInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get dependent service: %w", err)
+		}
+
+		dependentServices[dependentServiceName] = ctr
+	}
+
 	return (*serviceFunc).container(
-		&serviceFunc{d: docker, service: s.service}, ctx,
+		&serviceFunc{c: compose, service: s.service}, ctx,
 		source, env, secrets,
 		mountedSecrets, volumes, caches,
+		dependentServices,
 	)
 }
 
-func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module, object *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef) {
-	typedef := dag.
-		Function(s.service.Name(), dag.TypeDef().WithObject("Container")).
-		WithDescription(fmt.Sprintf("Create a %s service container", s.service.Name()))
+func (s *serviceFunc) Arguments() []*object.FunctionArg {
+	args := []*object.FunctionArg{}
 
+	/////
+	// Add image if necessary
 	source := s.service.Source()
-
 	if source.Type == dockercompose.SourceTypeImage {
-		typedef = typedef.WithArg("image", dag.TypeDef().WithKind(dagger.TypeDefKindStringKind), dagger.FunctionWithArgOpts{
-			DefaultValue: utils.LoadDefaultValue(source.Image.Ref),
-			Description:  "Image to use for the service",
+		args = append(args, &object.FunctionArg{
+			Name: "image",
+			Type: dag.TypeDef().WithKind(dagger.TypeDefKindStringKind),
+			Opts: dagger.FunctionWithArgOpts{
+				DefaultValue: utils.LoadDefaultValue(source.Image.Ref),
+				Description:  "Image to use for the service",
+			},
 		})
 	}
 
-	/////
+	//////
 	// Add environment variables
 	env, secrets := s.service.Environment()
 	for key, value := range env {
@@ -191,21 +260,33 @@ func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module
 			opts.DefaultValue = utils.LoadDefaultValue(value)
 		}
 
-		typedef = typedef.WithArg(key, dag.TypeDef().WithKind(dagger.TypeDefKindStringKind), opts)
-	}
-
-	for _, name := range secrets {
-		typedef = typedef.WithArg(name, dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{
-			Description: fmt.Sprintf("Set secret environment variable %s", name),
+		args = append(args, &object.FunctionArg{
+			Name: key,
+			Type: dag.TypeDef().WithKind(dagger.TypeDefKindStringKind),
+			Opts: opts,
 		})
 	}
 
 	/////
-	// Add mounted secrets
+	// Add environment variables secrets
+	for _, name := range secrets {
+		args = append(args, &object.FunctionArg{
+			Name: name,
+			Type: dag.TypeDef().WithObject("Secret"),
+			Opts: dagger.FunctionWithArgOpts{
+				Description: fmt.Sprintf("Set secret environment variable %s", name),
+			},
+		})
+	}
+
 	mountedSecretsName := s.service.MountedSecrets()
 	for _, name := range mountedSecretsName {
-		typedef = typedef.WithArg(name, dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{
-			Description: fmt.Sprintf("Secret %s to mount", name),
+		args = append(args, &object.FunctionArg{
+			Name: name,
+			Type: dag.TypeDef().WithObject("Secret"),
+			Opts: dagger.FunctionWithArgOpts{
+				Description: fmt.Sprintf("Secret %s to mount", name),
+			},
 		})
 	}
 
@@ -213,14 +294,46 @@ func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module
 	// Add mounted volumes
 	mountedVolumesPaths, _ := s.service.Volumes()
 	for _, volumePath := range mountedVolumesPaths {
-		typedef = typedef.WithArg(
-			volumePath.Name(),
-			dag.TypeDef().WithObject("Directory"),
-			dagger.FunctionWithArgOpts{
+		args = append(args, &object.FunctionArg{
+			Name: volumePath.Name(),
+			Type: dag.TypeDef().WithObject("Directory"),
+			Opts: dagger.FunctionWithArgOpts{
 				DefaultPath: volumePath.Origin(),
 				Description: fmt.Sprintf("Mount directory at %s", volumePath.Target()),
 			},
-		)
+		})
+	}
+
+	return args
+}
+
+func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module, object *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef) {
+	typedef := dag.
+		Function(s.service.Name(), dag.TypeDef().WithObject("Container")).
+		WithDescription(fmt.Sprintf("Create a %s service container", s.service.Name()))
+
+	args := s.Arguments()
+	for _, arg := range args {
+		typedef = typedef.WithArg(arg.Name, arg.Type, arg.Opts)
+	}
+
+	/////
+	// Add depends on service argument
+
+	for _, dependencyName := range s.service.DependsOn() {
+		service, exist := s.c.funcMap[dependencyName]
+		if !exist {
+			panic(fmt.Errorf("service %s does not exist but %s depends on it", dependencyName, s.service.Name()))
+		}
+
+		serviceArgs := service.Arguments()
+		for _, arg := range serviceArgs {
+			typedef = typedef.WithArg(
+				fmt.Sprintf("%s_%s", dependencyName, arg.Name),
+				arg.Type,
+				arg.Opts,
+			)
+		}
 	}
 
 	return mod, object.WithFunction(typedef)

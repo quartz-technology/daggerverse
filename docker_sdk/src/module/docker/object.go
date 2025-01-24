@@ -9,6 +9,7 @@ import (
 	"dagger.io/dagger/dag"
 	"dagger.io/dockersdk/codebase/dockercompose"
 	"dagger.io/dockersdk/codebase/dockerfile"
+	"dagger.io/dockersdk/module/compose"
 	"dagger.io/dockersdk/module/object"
 	"dagger.io/dockersdk/utils"
 )
@@ -19,6 +20,7 @@ type Docker struct {
 	name string
 
 	dockerfile *dockerfile.Dockerfile
+	dockercomposeFile *dockercompose.DockerCompose
 	funcMap    map[string]object.Function
 }
 
@@ -76,6 +78,7 @@ func (d *Docker) load(state object.State) (*Docker, error) {
 	cpyDocker := &Docker{
 		name:       d.name,
 		dockerfile: d.dockerfile,
+		dockercomposeFile: d.dockercomposeFile,
 		funcMap:    d.funcMap,
 	}
 
@@ -101,8 +104,21 @@ func (d *Docker) WithDockerfile(dockerfile *dockerfile.Dockerfile) *Docker {
 	return d
 }
 
-func (d *Docker) WithService(service *dockercompose.Service) *Docker {
-	d.funcMap[service.Name()] = &serviceFunc{d: d, service: service}
+func (d *Docker) WithDockerCompose(dockercomposeFile *dockercompose.DockerCompose) *Docker {
+	d.dockercomposeFile = dockercomposeFile
+	d.funcMap["Compose"] = &composeFunc{d: d}
 
 	return d
+}
+
+func (d *Docker) Deps() map[string]object.Object {
+	deps := make(map[string]object.Object)
+
+	if d.dockercomposeFile != nil {
+		composeObj := compose.New(d.Dir, d.dockercomposeFile)
+
+		deps[composeObj.Name()] = composeObj
+	}
+
+	return deps
 }
