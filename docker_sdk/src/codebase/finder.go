@@ -31,9 +31,19 @@ func getDockerfile(dirPath string, dir []os.DirEntry) (*dockerfile.Dockerfile, b
 	return nil, false, nil
 }
 
-func getDockerCompose(ctx context.Context,dirPath string, dir []os.DirEntry) (*dockercompose.DockerCompose, bool, error) {
+func getDockerCompose(ctx context.Context, dirPath string, dir []os.DirEntry) (*dockercompose.DockerCompose, bool, error) {
+	isComposeFile := func(name string) bool {
+		for _, composeFile := range []string{"docker-compose.yml", "docker-compose.yaml", "compose.yaml", "compose.yml"} {
+			if name == composeFile {
+				return true
+			}
+		}
+
+		return false
+	}
+
 	for _, entry := range dir {
-		if entry.Name() == "docker-compose.yml" || entry.Name() == "docker-compose.yaml" {
+		if isComposeFile(entry.Name()) {
 			fileContent, err := os.ReadFile(dirPath + "/" + entry.Name())
 			if err != nil {
 				return nil, true, fmt.Errorf("failed to get %s content: %w", entry.Name(), err)
