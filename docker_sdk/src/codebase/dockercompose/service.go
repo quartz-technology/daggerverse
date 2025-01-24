@@ -3,7 +3,6 @@ package dockercompose
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/compose-spec/compose-go/types"
 )
@@ -62,7 +61,7 @@ func (s *Service) Source() *Source {
 	if s.s.Build != nil {
 		dockerfile := &SourceDockerfile{
 			Dockerfile: s.s.Build.Dockerfile,
-			Context:    strings.TrimPrefix(s.s.Build.Context, "/scratch/"),
+			Context:    trimHostPath(s.s.Build.Context),
 		}
 
 		if s.s.Build.Args != nil {
