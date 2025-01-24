@@ -1,8 +1,6 @@
 package codebase
 
 import (
-	"fmt"
-
 	"dagger.io/dockersdk/module"
 	"dagger.io/dockersdk/module/docker"
 )
