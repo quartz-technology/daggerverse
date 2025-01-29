@@ -1,0 +1,29 @@
+x-shared-env: &shared-api-worker-env
+  A_MYSQL_DATABASE: example_db
+ 
+services:
+  database:
+    image: bitnami/mysql:latest
+    environment:
+      <<: *shared-api-worker-env
+    depends_on:
+      - dep
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/bitnami/mysql/data
+
+  dep:
+    image: bitnami/redis:latest
+    environment:
+      <<: *shared-api-worker-env
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/bitnami/redis/data
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

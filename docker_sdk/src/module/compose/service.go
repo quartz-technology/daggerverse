@@ -3,7 +3,6 @@ package compose
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"dagger.io/dagger"
 	"dagger.io/dagger/dag"
@@ -16,6 +15,10 @@ import (
 type serviceFunc struct {
 	c       *Compose
 	service *dockercompose.Service
+
+	// If as dep is true, the service will prefix the service name before
+	// looking for the input arguments
+	asDep bool
 }
 
 //
@@ -31,8 +34,9 @@ func (s *serviceFunc) container(
 	secretsEnv map[string]*dagger.Secret,
 	mountedSecrets map[string]*dagger.Secret,
 	mountedVolumes map[string]*dagger.Directory,
+	mountedFiles map[string]*dagger.File,
 	caches map[string]string,
-	dependentServices map[string]*dagger.Container,
+	dependentServices []*proxy.Service,
 ) (*dagger.Container, error) {
 	var ctr *dagger.Container
 
@@ -85,8 +89,31 @@ func (s *serviceFunc) container(
 		ctr = ctr.WithExposedPort(port)
 	}
 
+	// Get exposed ports
+	exposedPorts, err := ctr.ExposedPorts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get exposed ports: %w", err)
+	}
+
+	for _, port := range exposedPorts {
+		exposedPort, err := port.Port(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get exposed port: %w", err)
+		}
+
+		ctr = ctr.WithExposedPort(exposedPort)
+
+		s.service.WithExposedPort(exposedPort)
+	}
+
 	for path, volume := range mountedVolumes {
 		ctr = ctr.WithMountedDirectory(path, volume, dagger.ContainerWithMountedDirectoryOpts{
+			Owner: fmt.Sprintf("%s:%s", user, user),
+		})
+	}
+
+	for path, file := range mountedFiles {
+		ctr = ctr.WithMountedFile(path, file, dagger.ContainerWithMountedFileOpts{
 			Owner: fmt.Sprintf("%s:%s", user, user),
 		})
 	}
@@ -97,11 +124,22 @@ func (s *serviceFunc) container(
 		})
 	}
 
-	for name, service := range dependentServices {
-		ctr = ctr.WithServiceBinding(name, service.AsService())
+	entrypoint, exist := s.service.Entrypoint()
+	if exist {
+		ctr = ctr.WithEntrypoint(entrypoint)
 	}
 
-	return ctr, nil
+	command, exist := s.service.Command()
+	if exist {
+		ctr = ctr.WithDefaultArgs(command)
+	}
+
+	for _, service := range dependentServices {
+		ctr = ctr.
+			WithServiceBinding(service.Name, service.Service)
+	}
+
+	return ctr.Sync(ctx)
 }
 
 func (s *serviceFunc) ToContainer(ctx context.Context, state object.State, input object.InputArgs) (*dagger.Container, error) {
@@ -124,20 +162,36 @@ func (s *serviceFunc) ToService(ctx context.Context, state object.State, input o
 		return nil, fmt.Errorf("failed to convert service %s to container: %w", s.service.Name(), err)
 	}
 
-	ports := s.service.Ports()
-	if len(ports) == 0 {
-		return nil, fmt.Errorf("service %s has no ports", s.service.Name())
+	service := &proxy.Service{
+		Service: ctr.AsService(dagger.ContainerAsServiceOpts{UseEntrypoint: true}),
+		Name:    s.service.Name(),
+		Alias:   s.service.ContainerName(),
+		Exposed: false,
 	}
 
-	return &proxy.Service{
-		Service:  ctr.AsService(dagger.ContainerAsServiceOpts{UseEntrypoint: true}),
-		Name:     s.service.Name(),
-		Frontend: ports[0],
-		Backend:  ports[0],
-	}, nil
+	ports := s.service.Ports()
+	if len(ports) == 0 {
+		return service, nil
+	}
+
+	service.Frontend = ports[0]
+	service.Backend = ports[0]
+	service.Exposed = true
+
+	return service, nil
+}
+
+func (s *serviceFunc) formatInputArgName(argName string) string {
+	if s.asDep {
+		return fmt.Sprintf("%s_%s", s.service.Name(), argName)
+	}
+
+	return argName
 }
 
 func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input object.InputArgs) (object.Result, error) {
+	fmt.Printf("Invoking service %s; input: %#v\n", s.service.Name(), input)
+
 	compose, err := s.c.load(state)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load object state: %w", err)
@@ -150,18 +204,18 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 	// The image may be overwritten by the user
 	source := s.service.Source()
 	if source.Type == dockercompose.SourceTypeImage {
-		source.Image.Ref = utils.LoadArgument[string]("image", input)
+		source.Image.Ref = utils.LoadArgument[string](s.formatInputArgName("image"), input)
 	}
 
 	env := map[string]string{}
 	for key := range envMap {
-		env[key] = utils.LoadArgument[string](key, input)
+		env[key] = utils.LoadArgument[string](s.formatInputArgName(utils.FormatEnvVariableName(key)), input)
 	}
 
 	secrets := map[string]*dagger.Secret{}
 	for _, name := range secretsMap {
-		if input[name] != nil {
-			cliSecret := utils.LoadSecretFromID([]byte(input[name]))
+		if input[s.formatInputArgName(name)] != nil {
+			cliSecret := utils.LoadSecretFromID([]byte(input[s.formatInputArgName(utils.FormatEnvVariableName(name))]))
 
 			secretValue, err := cliSecret.Plaintext(ctx)
 			if err != nil {
@@ -169,13 +223,15 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 			}
 
 			secrets[name] = dag.SetSecret(name, secretValue)
+		} else {
+			secrets[name] = dag.SetSecret(name, `""`)
 		}
 	}
 
 	mountedSecrets := map[string]*dagger.Secret{}
 	for _, name := range mountedSecretsName {
-		if input[name] != nil {
-			cliSecret := utils.LoadSecretFromID([]byte(input[name]))
+		if input[s.formatInputArgName(name)] != nil {
+			cliSecret := utils.LoadSecretFromID([]byte(input[s.formatInputArgName(name)]))
 
 			secretValue, err := cliSecret.Plaintext(ctx)
 			if err != nil {
@@ -187,9 +243,14 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 	}
 
 	volumes := map[string]*dagger.Directory{}
+	mountedFiles := map[string]*dagger.File{}
 	for _, volumePath := range mountedVolumePaths {
-		if input[volumePath.Name()] != nil {
-			volumes[volumePath.Target()] = utils.LoadDirectoryFromID([]byte(input[volumePath.Name()]))
+		if input[s.formatInputArgName(volumePath.Name())] != nil {
+			if volumePath.IsDir() {
+				volumes[volumePath.Target()] = utils.LoadDirectoryFromID([]byte(input[s.formatInputArgName(volumePath.Name())]))
+			} else {
+				mountedFiles[volumePath.Target()] = utils.LoadFileFromID([]byte(input[s.formatInputArgName(volumePath.Name())]))
+			}
 		}
 	}
 
@@ -198,36 +259,41 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		caches[cache.Name()] = cache.Path()
 	}
 
-	dependentServices := map[string]*dagger.Container{}
+	dependentServices := []*proxy.Service{}
 	for _, dependentServiceName := range s.service.DependsOn() {
+		if compose.runningServices[dependentServiceName] != nil {
+			dependentService := compose.runningServices[dependentServiceName]
+			fmt.Printf("service %s is already running ; binding it to the dependent service %s\n", dependentServiceName, dependentService.Name, s.service.Name())
+
+			dependentServices = append(dependentServices, dependentService)
+
+			continue
+		}
+
+		fmt.Printf("service %s is not running yet; starting it\n", dependentServiceName)
+
 		dockerComposeService, err := s.c.dockercompose.GetService(dependentServiceName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get service %s that %s depends on", dependentServiceName, s.service.Name())
 		}
 
-		service := &serviceFunc{c: compose, service: dockerComposeService}
-		servicePrefix := fmt.Sprintf("%s_", dependentServiceName)
+		serviceFct := &serviceFunc{c: compose, service: dockerComposeService, asDep: true}
 
-		serviceInput := input
-		for argName, argValue := range input {
-			if strings.HasPrefix(argName, servicePrefix) {
-				serviceInput[strings.TrimPrefix(argName, servicePrefix)] = argValue
-			}
-		}
-
-		ctr, err := service.ToContainer(ctx, state, serviceInput)
+		service, err := serviceFct.ToService(ctx, state, input)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dependent service: %w", err)
 		}
 
-		dependentServices[dependentServiceName] = ctr
+		dependentServices = append(dependentServices, service)
 	}
 
+	fmt.Printf("Starting service %s\n", s.service.Name())
+
 	return (*serviceFunc).container(
-		&serviceFunc{c: compose, service: s.service}, ctx,
+		&serviceFunc{c: compose, service: s.service, asDep: s.asDep}, ctx,
 		source, env, secrets,
-		mountedSecrets, volumes, caches,
-		dependentServices,
+		mountedSecrets, volumes, mountedFiles,
+		caches, dependentServices,
 	)
 }
 
@@ -256,13 +322,17 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 			Description: fmt.Sprintf("Set environment variable %s", key),
 		}
 
-		if value != nil {
+		if value != nil && *value != "" {
 			opts.DefaultValue = utils.LoadDefaultValue(value)
 		}
 
 		args = append(args, &object.FunctionArg{
-			Name: key,
-			Type: dag.TypeDef().WithKind(dagger.TypeDefKindStringKind),
+			Name: utils.FormatEnvVariableName(key),
+			Type: dag.TypeDef().
+				WithKind(dagger.TypeDefKindStringKind).
+				// Environment variables are optional and will default to an empty
+				// string if not set.
+				WithOptional(true),
 			Opts: opts,
 		})
 	}
@@ -271,8 +341,8 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 	// Add environment variables secrets
 	for _, name := range secrets {
 		args = append(args, &object.FunctionArg{
-			Name: name,
-			Type: dag.TypeDef().WithObject("Secret"),
+			Name: utils.FormatEnvVariableName(name),
+			Type: dag.TypeDef().WithObject("Secret").WithOptional(true),
 			Opts: dagger.FunctionWithArgOpts{
 				Description: fmt.Sprintf("Set secret environment variable %s", name),
 			},
@@ -294,14 +364,25 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 	// Add mounted volumes
 	mountedVolumesPaths, _ := s.service.Volumes()
 	for _, volumePath := range mountedVolumesPaths {
-		args = append(args, &object.FunctionArg{
-			Name: volumePath.Name(),
-			Type: dag.TypeDef().WithObject("Directory"),
-			Opts: dagger.FunctionWithArgOpts{
-				DefaultPath: volumePath.Origin(),
-				Description: fmt.Sprintf("Mount directory at %s", volumePath.Target()),
-			},
-		})
+		if volumePath.IsDir() {
+			args = append(args, &object.FunctionArg{
+				Name: volumePath.Name(),
+				Type: dag.TypeDef().WithObject("Directory"),
+				Opts: dagger.FunctionWithArgOpts{
+					DefaultPath: volumePath.Origin(),
+					Description: fmt.Sprintf("Mount directory at %s", volumePath.Target()),
+				},
+			})
+		} else {
+			args = append(args, &object.FunctionArg{
+				Name: volumePath.Name(),
+				Type: dag.TypeDef().WithObject("File"),
+				Opts: dagger.FunctionWithArgOpts{
+					DefaultPath: volumePath.Origin(),
+					Description: fmt.Sprintf("Mount file at %s", volumePath.Target()),
+				},
+			})
+		}
 	}
 
 	return args
@@ -319,7 +400,6 @@ func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module
 
 	/////
 	// Add depends on service argument
-
 	for _, dependencyName := range s.service.DependsOn() {
 		service, exist := s.c.funcMap[dependencyName]
 		if !exist {

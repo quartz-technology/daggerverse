@@ -9,14 +9,14 @@ services:
   gateway:
     build: ./gateway
     environment:
-      - MESSAGE
+      - MESSAGE="test"
     ports:
       - "8081:8081"
 
   redis:
     image: bitnami/redis:latest
     environment:
-      - REDIS_PASSWORD
+      - REDIS_PASSWORD="foo"
     ports:
       - "6379:6379"
     volumes:

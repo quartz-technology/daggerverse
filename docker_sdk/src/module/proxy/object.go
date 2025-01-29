@@ -10,11 +10,13 @@ import (
 )
 
 type Service struct {
-	Service *dagger.Service
-	Name string
+	Service  *dagger.Service
+	Name     string
+	Alias    string
 	Frontend int
-	Backend int
-	IsTcp bool
+	Backend  int
+	IsTcp    bool
+	Exposed  bool
 }
 
 type Proxy struct {
@@ -39,10 +41,12 @@ func (p *Proxy) WithService(
 		configPath = fmt.Sprintf("/etc/nginx/conf.d/%s.conf", service.Name)
 	}
 
-	p.ctr = p.ctr.
+	if service.Exposed {
+		p.ctr = p.ctr.
 		WithNewFile(configPath, config).
 		WithServiceBinding(service.Name, service.Service).
 		WithExposedPort(service.Frontend)
+	}
 
 	return p
 }

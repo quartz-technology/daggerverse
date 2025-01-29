@@ -12,8 +12,11 @@ import (
 func main() {
 	r := gin.Default()
 	r.GET("/ping", func(c *gin.Context) {
+		fmt.Println("Receive ping request")
+
 		url := os.Getenv("BACKEND_URL")
 
+		fmt.Println("Sending request to backend at", url)
 		res, err := http.Get(fmt.Sprintf("%s/ping", url))
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
@@ -37,5 +40,7 @@ func main() {
 			"message_from_backend": bodyString,
 		})
 	})
+
+	fmt.Printf("os.Getenv(MESSAGE): %s\n", os.Getenv("MESSAGE"))
 	r.Run("0.0.0.0:8081") // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }

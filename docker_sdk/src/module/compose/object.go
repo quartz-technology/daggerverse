@@ -9,6 +9,7 @@ import (
 	"dagger.io/dagger/dag"
 	"dagger.io/dockersdk/codebase/dockercompose"
 	"dagger.io/dockersdk/module/object"
+	"dagger.io/dockersdk/module/proxy"
 	"dagger.io/dockersdk/utils"
 )
 
@@ -17,6 +18,7 @@ type Compose struct {
 
 	dockercompose *dockercompose.DockerCompose
 	funcMap       map[string]object.Function
+	runningServices map[string]*proxy.Service
 }
 
 func New(
@@ -27,10 +29,11 @@ func New(
 		Dir:           dir,
 		dockercompose: dockercomposeFile,
 		funcMap:       make(map[string]object.Function),
+		runningServices: make(map[string]*proxy.Service),
 	}
 
 	for _, service := range dockercomposeFile.Services() {
-		c.funcMap[service.Name()] = &serviceFunc{c: c, service: service}
+		c.funcMap[service.Name()] = &serviceFunc{c: c, service: service, asDep: false}
 	}
 
 	// Add up for all services
@@ -86,6 +89,7 @@ func (c *Compose) load(state object.State) (*Compose, error) {
 	cpyCompose := &Compose{
 		dockercompose: c.dockercompose,
 		funcMap:       c.funcMap,
+		runningServices: c.runningServices,
 	}
 
 	if parentMap["Dir"] != nil {

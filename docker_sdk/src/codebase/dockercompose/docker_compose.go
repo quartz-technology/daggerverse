@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"dagger.io/dockersdk/codebase/finder"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 )
@@ -11,9 +12,11 @@ import (
 type DockerCompose struct {
 	filename string
 	project  *types.Project
+
+	finder *finder.Finder
 }
 
-func NewDockerCompose(ctx context.Context, filename string, content []byte) (*DockerCompose, error) {
+func NewDockerCompose(ctx context.Context, filename string, content []byte, finder *finder.Finder) (*DockerCompose, error) {
 	project, err := loader.LoadWithContext(ctx, types.ConfigDetails{
 		ConfigFiles: []types.ConfigFile{
 			{
@@ -33,6 +36,7 @@ func NewDockerCompose(ctx context.Context, filename string, content []byte) (*Do
 	return &DockerCompose{
 		filename: filename,
 		project:  project,
+		finder: finder,
 	}, nil
 }
 
@@ -40,7 +44,7 @@ func (d *DockerCompose) Services() []*Service {
   services := make([]*Service, len(d.project.Services))
 	
 	for i, service := range d.project.Services {
-		services[i] = NewService(&service)
+		services[i] = NewService(d, &service, d.finder)
 	}
 
 	return services

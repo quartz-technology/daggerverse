@@ -38,22 +38,25 @@ func (u *allFunc) Invoke(ctx context.Context, state object.State, input object.I
 
 	services := []*proxy.Service{}
 	for _, service := range u.c.dockercompose.Services() {
-		service := &serviceFunc{c: compose, service: service}
-		servicePrefix := fmt.Sprintf("%s_", service.service.Name())
+		if u.c.runningServices[service.Name()] != nil {
+			fmt.Printf("service %s is already running ; exposing it to the proxy\n", service.Name())
 
-		serviceInput := input
-		for argName, argValue := range input {
-			if strings.HasPrefix(argName, servicePrefix) {
-				serviceInput[strings.TrimPrefix(argName, servicePrefix)] = argValue
-			}
+			services = append(services, u.c.runningServices[service.Name()])
+
+			continue
 		}
 
-		serviceCtr, err := service.ToService(ctx, state, serviceInput)
+		fmt.Printf("service %s is not running yet; starting it\n", service.Name())
+
+		service := &serviceFunc{c: compose, service: service, asDep: true}
+
+		serviceCtr, err := service.ToService(ctx, state, input)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get service %s: %w", service.service.Name(), err)
 		}
 
 		services = append(services, serviceCtr)
+		u.c.runningServices[service.service.Name()] = serviceCtr
 	}
 
 	return (*allFunc).up(

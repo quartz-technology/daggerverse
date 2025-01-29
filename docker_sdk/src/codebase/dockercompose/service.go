@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"dagger.io/dockersdk/codebase/finder"
+	"dagger.io/dockersdk/utils"
 	"github.com/compose-spec/compose-go/types"
 )
 
@@ -12,7 +14,7 @@ type SourceImage struct {
 }
 
 type SourceDockerfile struct {
-	Context string
+	Context    string
 	Dockerfile string
 	BuildArgs  map[string]*string
 	Target     *string
@@ -35,16 +37,30 @@ type Source struct {
 }
 
 type Service struct {
-	s *types.ServiceConfig
+	sourceCompose *DockerCompose
+	s             *types.ServiceConfig
+	finder *finder.Finder
+
+	exposedPorts []int
 }
 
-func NewService(service *types.ServiceConfig) *Service {
+func NewService(sourceCompose *DockerCompose, service *types.ServiceConfig, finder *finder.Finder) *Service {
 	return &Service{
+		sourceCompose: sourceCompose,
 		s: service,
+		finder: finder,
 	}
 }
 
 func (s *Service) Name() string {
+	return s.s.Name
+}
+
+func (s *Service) ContainerName() string {
+	if s.s.ContainerName != "" {
+		return s.s.ContainerName
+	}
+
 	return s.s.Name
 }
 
@@ -116,7 +132,20 @@ func (s *Service) Ports() []int {
 		ports = append(ports, published)
 	}
 
+	for _, port := range s.exposedPorts {
+		ports = append(ports, port)
+	}
+
+	// Clean duplicates
+	ports = utils.RemoveListDuplicates(ports)
+
 	return ports
+}
+
+func (s *Service) WithExposedPort(port int) *Service {
+	s.exposedPorts = append(s.exposedPorts, port)
+
+	return s
 }
 
 func (s *Service) Environment() (env map[string]*string, secrets []string) {
@@ -153,19 +182,62 @@ func (s *Service) Volumes() ([]*Volume, []*Cache) {
 		case "volume":
 			caches = append(caches, &Cache{name: v.Source, path: v.Target})
 		case "bind":
-			volumes = append(volumes, &Volume{origin: trimHostPath(v.Source), target: v.Target})
+			source := trimHostPath(v.Source)
+			isDir, err := s.finder.IsPathDirectory(source)
+
+			// If we can't get the volumes, we'll convert it to cache
+			if err != nil {
+				caches = append(caches, &Cache{name: source, path: v.Target})
+
+				continue
+			}
+
+			volumes = append(volumes, &Volume{origin: source, target: v.Target, isDir: isDir})
 		}
 	}
 
 	return volumes, caches
 }
 
-func (s *Service) DependsOn() []string{
-	dependentServices := []string{}
+func (s *Service) DependsOn() []string {
+	dependentServices := map[string]bool{}
 
 	for key := range s.s.DependsOn {
-		dependentServices = append(dependentServices, key)
+		dependentServices[key] = true
+
+		service, err := s.sourceCompose.GetService(key)
+		if err != nil {
+			fmt.Printf("failed to get service %s: %s\n", key, err.Error())
+
+			continue
+		}
+
+		serviceDeps := service.DependsOn()
+		for _, dep := range serviceDeps {
+			dependentServices[dep] = true
+		}
 	}
 
-	return dependentServices
+	var dependentServicesList []string
+	for service := range dependentServices {
+		dependentServicesList = append(dependentServicesList, service)
+	}
+
+	return dependentServicesList
+}
+
+func (s *Service) Entrypoint() ([]string, bool) {
+	if s.s.Entrypoint != nil {
+		return s.s.Entrypoint, true
+	}
+
+	return nil, false
+}
+
+func (s *Service) Command() ([]string, bool) {
+	if s.s.Command != nil {
+		return s.s.Command, true
+	}
+
+	return nil, false
 }
