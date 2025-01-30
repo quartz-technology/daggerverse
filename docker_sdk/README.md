@@ -2,6 +2,22 @@
 
 A SDK that automatically provides a custom function to build your project's Dockerfile or run your docker-compose services.
 
+## Table of Contents
+
+- [Dockerfile](#dockerfile)
+  - [Usage](#usage)
+  - [Functions](#functions)
+    - [Build](#build)
+  - [Example](#dockerfile-example)
+- [Docker Compose](#docker-compose)
+  - [Supported properties](#supported-properties)
+    - [Environment variables](#environment-variables)
+    - [Volumes](#volumes)
+    - [Depends on](#depends-on)
+  - [Example](#docker-compose-example)
+    - [Start all services](#start-all-services)
+    - [Start one service](#start-one-service)
+
 ## Dockerfile
 
 Any argument, secret, or stages defined in your Dockerfile will be automatically exposed as parameter to your function.
@@ -40,7 +56,7 @@ Build a container of your project's application using your dockerfile and return
 - `buildArgs`: A list of build arguments to pass to the build (optional).
 - `secrets`: A list of secrets to pass to the build (optional).
 
-### Example
+### Dockerfile Example
 
 ```Dockerfile
 ARG BASE_IMAGE=golang:1.23.2-alpine
@@ -189,7 +205,7 @@ Any argument of these services will be available as argument in the CLI, prefixe
 
 For example, if `my-other-service` has an argument `my-arg`, it will be available as `--my-other-service-my-arg` in the CLI.
 
-### Example
+### Docker Compose Example
 
 ```yaml
 services:
@@ -222,7 +238,7 @@ volumes:
   redis_data:
 ```
 
-#### All
+#### Start all services
 
 Start all services with the function `all`:
 
@@ -242,7 +258,7 @@ $ PASSWORD=test dagger call docker compose all --redis-redis-password env:PASSWO
 
 :bulb: All functions will have their arguments prefixed by their service name.
 
-#### Service
+#### Start one service
 
 Start a single service by its name:
 
