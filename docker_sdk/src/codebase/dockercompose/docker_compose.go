@@ -9,10 +9,15 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
+// DockerCompose represents a Docker Compose configuration file.
 type DockerCompose struct {
+	// filename is the path to the Docker Compose file.
 	filename string
-	project  *types.Project
 
+	// project holds the parsed Docker Compose project configuration.
+	project *types.Project
+
+	// finder assists in finding files in the host's directory.
 	finder *finder.Finder
 }
 
@@ -40,9 +45,10 @@ func NewDockerCompose(ctx context.Context, filename string, content []byte, find
 	}, nil
 }
 
+// Services returns all services defined in the Docker Compose file.
 func (d *DockerCompose) Services() []*Service {
-  services := make([]*Service, len(d.project.Services))
-	
+	services := make([]*Service, len(d.project.Services))
+
 	for i, service := range d.project.Services {
 		services[i] = NewService(d, &service, d.finder)
 	}
@@ -50,6 +56,7 @@ func (d *DockerCompose) Services() []*Service {
 	return services
 }
 
+// GetService retrieves a service by its name.
 func (d *DockerCompose) GetService(name string) (*Service, error) {
 	for _, service := range d.Services() {
 		if service.Name() == name {

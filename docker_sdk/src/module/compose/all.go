@@ -20,6 +20,7 @@ type allFunc struct {
 	c *Compose
 }
 
+// up creates a proxy module with the given services.
 func (u *allFunc) up(services []*proxy.Service) *dagger.Container {
 	proxy := proxy.New()
 
@@ -30,6 +31,7 @@ func (u *allFunc) up(services []*proxy.Service) *dagger.Container {
 	return proxy.Service()
 }
 
+// Invoke executes the "All" function with the given state and input arguments.
 func (u *allFunc) Invoke(ctx context.Context, state object.State, input object.InputArgs) (object.Result, error) {
 	compose, err := u.c.load(state)
 	if err != nil {
@@ -65,11 +67,15 @@ func (u *allFunc) Invoke(ctx context.Context, state object.State, input object.I
 	), nil
 }
 
+// Arguments is a placeholder method not invoked for this function
+// required to implements the object.Function interface.
+//
+// This function should never be called for this function.
 func (u *allFunc) Arguments() []*object.FunctionArg {
-	// This method should not be called for this function
 	return nil
 }
 
+// AddTypeDefToObject adds "All" function definition to the given Dagger module's object.
 func (u *allFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module, obj *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef) {
 	args := []*object.FunctionArg{}
 

@@ -9,61 +9,47 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
-type SourceImage struct {
-	Ref string
-}
-
-type SourceDockerfile struct {
-	Context    string
-	Dockerfile string
-	BuildArgs  map[string]*string
-	Target     *string
-	// TODO(TomChv): We do not support secrets in inline compose build to avoid
-	// DX conflict if secrets are shared between run & build.
-	// Secrets    []string
-}
-
-type SourceType string
-
-const (
-	SourceTypeImage      SourceType = "image"
-	SourceTypeDockerfile SourceType = "dockerfile"
-)
-
-type Source struct {
-	Type       SourceType
-	Image      *SourceImage
-	Dockerfile *SourceDockerfile
-}
-
+// Service represents a Docker Compose service configuration.
 type Service struct {
+	// sourceCompose is the DockerCompose object associated with the service.
 	sourceCompose *DockerCompose
-	s             *types.ServiceConfig
+
+	// s is a reference to the parsed service configuration.
+	s *types.ServiceConfig
+
+	// finder assists in finding files in the host's directory.
 	finder *finder.Finder
 
+	// exposedPorts holds additional ports exposed by the service's image.
+	//
+	// These can only be retrieved after the service's image has been pulled.
 	exposedPorts []int
 }
 
 func NewService(sourceCompose *DockerCompose, service *types.ServiceConfig, finder *finder.Finder) *Service {
 	return &Service{
 		sourceCompose: sourceCompose,
-		s: service,
-		finder: finder,
+		s:             service,
+		finder:        finder,
 	}
 }
 
+// Name returns the name of the service.
 func (s *Service) Name() string {
 	return s.s.Name
 }
 
+// ContainerName returns the container name if specified, else the service name.
 func (s *Service) ContainerName() string {
 	if s.s.ContainerName != "" {
 		return s.s.ContainerName
 	}
-
 	return s.s.Name
 }
 
+// Source returns the source of the service, either image or Dockerfile.
+//
+// If the service is not defined in the Compose file, this will leads to a panic.
 func (s *Service) Source() *Source {
 	if s.s.Image != "" {
 		return &Source{
@@ -99,18 +85,12 @@ func (s *Service) Source() *Source {
 	panic(fmt.Sprintf("no source found in the service %s", s.s.Name))
 }
 
-func (s *Service) Image() string {
-	return s.s.Image
-}
-
-func (s *Service) Dockerfile() string {
-	return s.s.Build.Dockerfile
-}
-
+// Workdir returns the working directory for the service.
 func (s *Service) Workdir() string {
 	return s.s.WorkingDir
 }
 
+// Ports returns all published and exposed ports for the service.
 func (s *Service) Ports() []int {
 	ports := []int{}
 
@@ -136,24 +116,26 @@ func (s *Service) Ports() []int {
 		ports = append(ports, port)
 	}
 
-	// Clean duplicates
+	// Remove duplicates if there are any.
 	ports = utils.RemoveListDuplicates(ports)
 
 	return ports
 }
 
+// WithExposedPort adds an additional exposed port to the service.
 func (s *Service) WithExposedPort(port int) *Service {
 	s.exposedPorts = append(s.exposedPorts, port)
-
 	return s
 }
 
+// Environment returns environment variables and secrets for the service.
 func (s *Service) Environment() (env map[string]*string, secrets []string) {
 	env = map[string]*string{}
 
 	for key, value := range s.s.Environment {
 		if value == nil {
 			secrets = append(secrets, key)
+
 			continue
 		}
 
@@ -163,6 +145,7 @@ func (s *Service) Environment() (env map[string]*string, secrets []string) {
 	return env, secrets
 }
 
+// MountedSecrets lists secrets mounted in the service configuration.
 func (s *Service) MountedSecrets() []string {
 	secrets := []string{}
 
@@ -173,6 +156,10 @@ func (s *Service) MountedSecrets() []string {
 	return secrets
 }
 
+// Volumes returns all the volumes and caches used by the service.
+//
+// If a volume is not defined in the host's directory, it will be transformed
+// into a cache volume.
 func (s *Service) Volumes() ([]*Volume, []*Cache) {
 	volumes := []*Volume{}
 	caches := []*Cache{}
@@ -183,9 +170,8 @@ func (s *Service) Volumes() ([]*Volume, []*Cache) {
 			caches = append(caches, &Cache{name: v.Source, path: v.Target})
 		case "bind":
 			source := trimHostPath(v.Source)
-			isDir, err := s.finder.IsPathDirectory(source)
 
-			// If we can't get the volumes, we'll convert it to cache
+			isDir, err := s.finder.IsPathDirectory(source)
 			if err != nil {
 				caches = append(caches, &Cache{name: source, path: v.Target})
 
@@ -199,6 +185,7 @@ func (s *Service) Volumes() ([]*Volume, []*Cache) {
 	return volumes, caches
 }
 
+// DependsOn retrieves a list of services this service depends on.
 func (s *Service) DependsOn() []string {
 	dependentServices := map[string]bool{}
 
@@ -226,6 +213,7 @@ func (s *Service) DependsOn() []string {
 	return dependentServicesList
 }
 
+// Entrypoint returns the entrypoint of the service, if defined.
 func (s *Service) Entrypoint() ([]string, bool) {
 	if s.s.Entrypoint != nil {
 		return s.s.Entrypoint, true
@@ -234,6 +222,7 @@ func (s *Service) Entrypoint() ([]string, bool) {
 	return nil, false
 }
 
+// Command returns the command executed in the container, if defined.
 func (s *Service) Command() ([]string, bool) {
 	if s.s.Command != nil {
 		return s.s.Command, true

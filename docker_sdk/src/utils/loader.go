@@ -1,3 +1,8 @@
+// This file contains utility functions for handling JSON with dagger types.
+//
+// These functions provide conversion tools that facilitate mapping JSON 
+// payloads to specific dagger entity types and handling default values.
+
 package utils
 
 import (
@@ -9,9 +14,8 @@ import (
 	"fmt"
 )
 
-// LoadArgument is a generic function to load an argument from 
-// the input map.
-// If the argument is not set, it returns the zero value of the type.
+// LoadArgument loads a typed argument from an input map.
+// Returns the zero value of the type if the argument is not set or unmarshalling fails.
 func LoadArgument[K any](name string, args object.InputArgs) K {
 	var res K
 
@@ -27,6 +31,8 @@ func LoadArgument[K any](name string, args object.InputArgs) K {
 	return res
 }
 
+// LoadDefaultValue marshals a value into dagger.JSON.
+// Returns an empty string if marshalling fails.
 func LoadDefaultValue(value interface{}) dagger.JSON {
 	jsonValue, err := json.Marshal(value)
 	if err != nil {
@@ -36,6 +42,8 @@ func LoadDefaultValue(value interface{}) dagger.JSON {
 	return dagger.JSON(jsonValue)
 }
 
+// LoadDirectoryFromID converts a byte payload to a dagger.Directory.
+// It unmarshals the payload to obtain the DirectoryID and uses it to load the directory.
 func LoadDirectoryFromID(idPayload []byte) *dagger.Directory {
 	var id dagger.DirectoryID
 
@@ -47,6 +55,8 @@ func LoadDirectoryFromID(idPayload []byte) *dagger.Directory {
 	return dag.LoadDirectoryFromID(id)
 }
 
+// LoadContainerFromID converts a byte payload to a dagger.Container.
+// It unmarshals the payload to obtain the ContainerID and uses it to load the container.
 func LoadContainerFromID(idPayload []byte) *dagger.Container {
 	var id dagger.ContainerID
 
@@ -58,6 +68,8 @@ func LoadContainerFromID(idPayload []byte) *dagger.Container {
 	return dag.LoadContainerFromID(id)
 }
 
+// LoadFileFromID converts a byte payload to a dagger.File.
+// It unmarshals the payload to obtain the FileID and uses it to load the file.
 func LoadFileFromID(idPayload []byte) *dagger.File {
 	var id dagger.FileID
 
@@ -69,6 +81,8 @@ func LoadFileFromID(idPayload []byte) *dagger.File {
 	return dag.LoadFileFromID(id)
 }
 
+// LoadSecretFromID converts a byte payload to a dagger.Secret.
+// It unmarshals the payload to obtain the SecretID and uses it to load the secret.
 func LoadSecretFromID(idPayload []byte) *dagger.Secret {
 	var id dagger.SecretID
 

@@ -9,20 +9,37 @@ import (
 	"dagger.io/dagger/dag"
 )
 
+// Service represents a service to be proxied.
 type Service struct {
-	Service  *dagger.Service
-	Name     string
-	Alias    string
+	// Service refers to a dagger.Service that this proxy will forward traffic to.
+	Service *dagger.Service
+
+	// Name is the unique name of the service.
+	Name string
+
+	// Alias is an alternative name for the service.
+	Alias string
+
+	// Frontend is the port number exposed by the proxy.
 	Frontend int
-	Backend  int
-	IsTcp    bool
-	Exposed  bool
+
+	// Backend is the port number where the actual service is running.
+	Backend int
+
+	// IsTcp specifies whether the service uses the TCP protocol.
+	IsTcp bool
+
+	// Exposed signals if the service should be exposed by the proxy.
+	Exposed bool
 }
 
+// Proxy is a struct that sets up a reverse proxy using an Nginx container.
 type Proxy struct {
+	// ctr is the internal container running the Nginx proxy.
 	ctr *dagger.Container
 }
 
+// New initializes a Proxy with default Nginx configuration.
 func New() *Proxy {
 	return &Proxy{
 		ctr: dag.Container().
@@ -32,6 +49,9 @@ func New() *Proxy {
 	}
 }
 
+// WithService configures adds the given service to the proxy.
+//
+// If the service isn't exposed, it will not be added to the proxy.
 func (p *Proxy) WithService(
 	service *Service,
 ) *Proxy {
@@ -43,18 +63,20 @@ func (p *Proxy) WithService(
 
 	if service.Exposed {
 		p.ctr = p.ctr.
-		WithNewFile(configPath, config).
-		WithServiceBinding(service.Name, service.Service).
-		WithExposedPort(service.Frontend)
+			WithNewFile(configPath, config).
+			WithServiceBinding(service.Name, service.Service).
+			WithExposedPort(service.Frontend)
 	}
 
 	return p
 }
 
+// Service returns the configured proxy container ready to start services.
 func (p *Proxy) Service() *dagger.Container {
 	return p.ctr.WithDefaultArgs([]string{"nginx", "-g", "daemon off;"})
 }
 
+// getConfig generates the Nginx configuration for a service.
 func (p *Proxy) getConfig(port int, name string, frontend int, isTcp bool) string {
 	var result bytes.Buffer
 	var config string

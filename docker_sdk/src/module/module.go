@@ -13,13 +13,19 @@ import (
 	"dagger.io/dockersdk/utils"
 )
 
+// Module represents a configurable DockerSDK module.
 type Module struct {
+	// name specifies the name of the module.
 	name string
 
+	// funcMap holds functions available in this module by name.
 	funcMap map[string]object.Function
+
+	// objects contains the objects associated with this module.
 	objects map[string]object.Object
 }
 
+// Build initializes a new Module with a given name and Docker configuration.
 func Build(name string, docker *docker.Docker) *Module {
 	baseObjects := map[string]object.Object{
 		// The default object for the docker SDK
@@ -37,10 +43,12 @@ func Build(name string, docker *docker.Docker) *Module {
 	}
 }
 
+// Name returns the name of the module.
 func (m *Module) Name() string {
 	return m.name
 }
 
+// typeDef constructs and returns the module's type definition.
 func (m *Module) typeDef(ctx context.Context) (*dagger.Module, error) {
 	mod := dag.Module()
 
@@ -61,6 +69,7 @@ func (m *Module) typeDef(ctx context.Context) (*dagger.Module, error) {
 	return mod, nil
 }
 
+// Dispatch handles the execution of a function call within the module context.
 func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 	fnCall := dag.CurrentFunctionCall()
 	defer func() {
@@ -75,14 +84,17 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 	if err != nil {
 		return fmt.Errorf("get parent name: %w", err)
 	}
+
 	fnName, err := fnCall.Name(ctx)
 	if err != nil {
 		return fmt.Errorf("get fn name: %w", err)
 	}
+
 	parentJson, err := fnCall.Parent(ctx)
 	if err != nil {
 		return fmt.Errorf("get fn parent: %w", err)
 	}
+
 	fnArgs, err := fnCall.InputArgs(ctx)
 	if err != nil {
 		return fmt.Errorf("get fn args: %w", err)
@@ -94,10 +106,12 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 		if err != nil {
 			return fmt.Errorf("get fn arg name: %w", err)
 		}
+
 		argValue, err := fnArg.Value(ctx)
 		if err != nil {
 			return fmt.Errorf("get fn arg value: %w", err)
 		}
+
 		inputArgs[argName] = []byte(argValue)
 	}
 
@@ -107,6 +121,7 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 		if errors.As(err, &exec) {
 			return exec.Unwrap()
 		}
+
 		return err
 	}
 
@@ -122,13 +137,15 @@ func (m *Module) Dispatch(ctx context.Context) (rerr error) {
 	return nil
 }
 
+// invoke carries out the invocation of a function within the module.
 func (m *Module) invoke(ctx context.Context, parentName string, parentJSON object.State, fnName string, input object.InputArgs) (_ any, err error) {
-	// If it's an empty parent name, that means we need to handle the registration
+	// If it's an empty parent name, that means we need to register the
+	// module's type definition.
 	if parentName == "" {
 		return m.typeDef(ctx)
 	}
 
-	// If it's a top-level invocation, we build the object called.
+	// If it's a top-level invocation, we build the called object.
 	if parentName == m.name {
 		return m.funcMap[fnName].Invoke(ctx, parentJSON, input)
 	}

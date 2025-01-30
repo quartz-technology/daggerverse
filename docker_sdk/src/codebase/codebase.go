@@ -11,14 +11,21 @@ import (
 	"dagger.io/dockersdk/codebase/finder"
 )
 
+// CodebasePath is the mounted path of the codebase in the DockerSDK runtime
+// container.
 const CodebasePath = "/app"
 
-
+// Codebase represents a codebase with Docker-related configurations.
 type Codebase struct {
-	dockerfile    *dockerfile.Dockerfile
+	// dockerfile points to the Dockerfile in the codebase.
+	dockerfile *dockerfile.Dockerfile
+
+	// dockercompose points to the docker-compose file, if present.
 	dockercompose *dockercompose.DockerCompose
 }
 
+// New creates a new instance of Codebase by searching for Docker-related
+// files in user's host current directory.
 func New(ctx context.Context) (*Codebase, error) {
 	dir, err := os.ReadDir(CodebasePath)
 	if err != nil {
@@ -49,6 +56,8 @@ func New(ctx context.Context) (*Codebase, error) {
 	}, nil
 }
 
+// getDockerfile searches for and returns a Dockerfile from the codebase,
+// along with its existence status.
 func getDockerfile(finder *finder.Finder) (*dockerfile.Dockerfile, bool, error) {
 	patterns := []string{"Dockerfile", "*.Dockerfile"}
 
@@ -72,6 +81,8 @@ func getDockerfile(finder *finder.Finder) (*dockerfile.Dockerfile, bool, error) 
 	return dockerfile, true, nil
 }
 
+// getDockerCompose searches for and returns a docker-compose configuration
+// from the codebase, along with its existence status.
 func getDockerCompose(ctx context.Context, finder *finder.Finder) (*dockercompose.DockerCompose, bool, error) {
 	patterns := []string{"docker-compose.yml", "docker-compose.yaml", "compose.yaml", "compose.yml"}
 

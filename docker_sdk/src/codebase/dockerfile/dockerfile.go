@@ -8,15 +8,23 @@ import (
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 )
 
+// Dockerfile represents a parsed Dockerfile.
 type Dockerfile struct {
+	// filename is the name of the Dockerfile.
 	filename string
+	// content is the parsed result of the Dockerfile.
 	content  *parser.Result
 
+	// stages are the defined build stages in the Dockerfile.
 	stages  []string
+	// args are the build arguments in the Dockerfile.
 	args    map[string]string
+	// secrets are the secrets used in the Dockerfile.
 	secrets []string
 }
 
+// NewDockerfile parses a Dockerfile from a given file and returns a Dockerfile
+// object with extracted stages, args, and secrets.
 func NewDockerfile(filename string, file *os.File) (*Dockerfile, error) {
 	content, err := parser.Parse(file)
 	if err != nil {
@@ -54,6 +62,7 @@ func NewDockerfile(filename string, file *os.File) (*Dockerfile, error) {
 				panic(fmt.Errorf("invalid ARG: %s", child.Next.Value))
 			}
 		case "RUN":
+			// Parse RUN command to extract secrets if it exists
 			for _, flag := range child.Flags {
 				if !strings.Contains(flag, "--mount=type=secret,id=") {
 					continue
@@ -73,22 +82,27 @@ func NewDockerfile(filename string, file *os.File) (*Dockerfile, error) {
 	}, nil
 }
 
+// Filename returns the filename of the Dockerfile.
 func (d *Dockerfile) Filename() string {
 	return d.filename
 }
 
+// Stages returns build stages defined in the Dockerfile.
 func (d *Dockerfile) Stages() []string {
 	return d.stages
 }
 
+// Args returns build arguments defined in the Dockerfile.
 func (d *Dockerfile) Args() map[string]string {
 	return d.args
 }
 
+// Secrets returns secrets defined in the Dockerfile.
 func (d *Dockerfile) Secrets() []string {
 	return d.secrets
 }
 
+// String displays the Dockerfile content.
 func (d *Dockerfile) String() string {
 	var result string
 

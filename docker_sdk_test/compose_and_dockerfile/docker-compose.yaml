@@ -9,14 +9,16 @@ services:
   gateway:
     build: ./gateway
     environment:
-      - MESSAGE="test"
+      - MESSAGE=test
     ports:
       - "8081:8081"
+    depends_on:
+      - backend
 
   redis:
     image: bitnami/redis:latest
     environment:
-      - REDIS_PASSWORD="foo"
+      - REDIS_PASSWORD
     ports:
       - "6379:6379"
     volumes:

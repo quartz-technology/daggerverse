@@ -12,21 +12,21 @@ import (
 	"dagger.io/dockersdk/utils"
 )
 
+// serviceFunc defines a callable docker compose service func.
 type serviceFunc struct {
-	c       *Compose
+	// c refers to the Dagger Object Compose instance for context and configurations.
+	c *Compose
+
+	// service represents the managed Docker Compose service.
 	service *dockercompose.Service
 
-	// If as dep is true, the service will prefix the service name before
+	// If set to true, the service will prefix the service name before
 	// looking for the input arguments
 	asDep bool
 }
 
-//
-// Name of the secret is lost when set
-// func X(my-secret *dagger.Secret)
-
-// Ask Marcos
-// Set the entrypoint for when as-service will be called
+// container sets up a Docker container using the provided parameters that
+// corresponds to a service defined in the Docker-Compose file.
 func (s *serviceFunc) container(
 	ctx context.Context,
 	source *dockercompose.Source,
@@ -142,6 +142,7 @@ func (s *serviceFunc) container(
 	return ctr.Sync(ctx)
 }
 
+// ToContainer converts the service into a configurable container.
 func (s *serviceFunc) ToContainer(ctx context.Context, state object.State, input object.InputArgs) (*dagger.Container, error) {
 	ctrRes, err := s.Invoke(ctx, state, input)
 	if err != nil {
@@ -156,6 +157,7 @@ func (s *serviceFunc) ToContainer(ctx context.Context, state object.State, input
 	return ctr, nil
 }
 
+// ToService converts a container into a service exposing necessary ports.
 func (s *serviceFunc) ToService(ctx context.Context, state object.State, input object.InputArgs) (*proxy.Service, error) {
 	ctr, err := s.ToContainer(ctx, state, input)
 	if err != nil {
@@ -181,6 +183,9 @@ func (s *serviceFunc) ToService(ctx context.Context, state object.State, input o
 	return service, nil
 }
 
+// formatInputArgName formats the input argument name
+//
+// It adds the service's name as prefix if asDep is true.
 func (s *serviceFunc) formatInputArgName(argName string) string {
 	if s.asDep {
 		return fmt.Sprintf("%s_%s", s.service.Name(), argName)
@@ -189,9 +194,11 @@ func (s *serviceFunc) formatInputArgName(argName string) string {
 	return argName
 }
 
+// Invoke returns the configured service container with given state and input arguments.
 func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input object.InputArgs) (object.Result, error) {
 	fmt.Printf("Invoking service %s; input: %#v\n", s.service.Name(), input)
 
+	// Loads the Dagger object instance from the object state
 	compose, err := s.c.load(state)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load object state: %w", err)
@@ -207,11 +214,18 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		source.Image.Ref = utils.LoadArgument[string](s.formatInputArgName("image"), input)
 	}
 
+	// Loads the environment variables
 	env := map[string]string{}
 	for key := range envMap {
 		env[key] = utils.LoadArgument[string](s.formatInputArgName(utils.FormatEnvVariableName(key)), input)
 	}
 
+	// Loads the secrets
+	//
+	// This workaround is required since the secret's name
+	// isn't the same as the identifier defined in the Dockerfile.
+	//
+	// If the secret isn't defined, it will be set as an empty string.
 	secrets := map[string]*dagger.Secret{}
 	for _, name := range secretsMap {
 		if input[s.formatInputArgName(name)] != nil {
@@ -228,6 +242,10 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		}
 	}
 
+	// Load mounted secret arguments
+	//
+	// This workaround is required since the secret's name
+	// isn't the same as the identifier defined in the Dockerfile.
 	mountedSecrets := map[string]*dagger.Secret{}
 	for _, name := range mountedSecretsName {
 		if input[s.formatInputArgName(name)] != nil {
@@ -242,6 +260,7 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		}
 	}
 
+	// Load mounted volume arguments
 	volumes := map[string]*dagger.Directory{}
 	mountedFiles := map[string]*dagger.File{}
 	for _, volumePath := range mountedVolumePaths {
@@ -254,11 +273,16 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 		}
 	}
 
+	// Add mounted caches arguments
 	caches := map[string]string{}
 	for _, cache := range cachesPaths {
 		caches[cache.Name()] = cache.Path()
 	}
 
+	// Add dependent services.
+	//
+	// If the dependent service is already running, bind it to the current service.
+	// Otherwise, create the dependent service.
 	dependentServices := []*proxy.Service{}
 	for _, dependentServiceName := range s.service.DependsOn() {
 		if compose.runningServices[dependentServiceName] != nil {
@@ -297,10 +321,10 @@ func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input obje
 	)
 }
 
+// Arguments returns the function arguments of this service.
 func (s *serviceFunc) Arguments() []*object.FunctionArg {
 	args := []*object.FunctionArg{}
 
-	/////
 	// Add image if necessary
 	source := s.service.Source()
 	if source.Type == dockercompose.SourceTypeImage {
@@ -314,7 +338,6 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 		})
 	}
 
-	//////
 	// Add environment variables
 	env, secrets := s.service.Environment()
 	for key, value := range env {
@@ -337,7 +360,6 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 		})
 	}
 
-	/////
 	// Add environment variables secrets
 	for _, name := range secrets {
 		args = append(args, &object.FunctionArg{
@@ -349,6 +371,7 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 		})
 	}
 
+	// Add mounted secrets
 	mountedSecretsName := s.service.MountedSecrets()
 	for _, name := range mountedSecretsName {
 		args = append(args, &object.FunctionArg{
@@ -360,7 +383,6 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 		})
 	}
 
-	/////
 	// Add mounted volumes
 	mountedVolumesPaths, _ := s.service.Volumes()
 	for _, volumePath := range mountedVolumesPaths {
@@ -388,18 +410,24 @@ func (s *serviceFunc) Arguments() []*object.FunctionArg {
 	return args
 }
 
+// AddTypeDefToObject adds function definition to a Dagger module's object.
+//
+// It defines the function signature including environment variables, secrets,
+// mounted secrets, mounted volumes, and caches.
+//
+// It returns the updated module and object definition.
 func (s *serviceFunc) AddTypeDefToObject(ctx context.Context, mod *dagger.Module, object *dagger.TypeDef) (*dagger.Module, *dagger.TypeDef) {
 	typedef := dag.
 		Function(s.service.Name(), dag.TypeDef().WithObject("Container")).
 		WithDescription(fmt.Sprintf("Create a %s service container", s.service.Name()))
 
+	// Retrieve this service's arguments
 	args := s.Arguments()
 	for _, arg := range args {
 		typedef = typedef.WithArg(arg.Name, arg.Type, arg.Opts)
 	}
 
-	/////
-	// Add depends on service argument
+	// Add dependent service arguments
 	for _, dependencyName := range s.service.DependsOn() {
 		service, exist := s.c.funcMap[dependencyName]
 		if !exist {
