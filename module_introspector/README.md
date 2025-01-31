@@ -10,7 +10,7 @@ It is used to introspect the GraphQL schema of a given module and returns its in
 
 ```shell
 dagger call introspect --module-source https://github.com/kpenfound/dagger-modules.git\#main:proxy -o introspection-result.json
-``
+```
 
 ### Introspect a local module
 
