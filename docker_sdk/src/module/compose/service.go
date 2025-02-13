@@ -196,7 +196,7 @@ func (s *serviceFunc) formatInputArgName(argName string) string {
 
 // Invoke returns the configured service container with given state and input arguments.
 func (s *serviceFunc) Invoke(ctx context.Context, state object.State, input object.InputArgs) (object.Result, error) {
-	fmt.Printf("Invoking service %s; input: %#v\n", s.service.Name(), input)
+	fmt.Printf("Invoking service %s\n", s.service.Name())
 
 	// Loads the Dagger object instance from the object state
 	compose, err := s.c.load(state)
