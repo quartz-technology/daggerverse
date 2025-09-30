@@ -8,11 +8,17 @@
 
 package main
 
+import (
+	"redis/internal/dagger"
+)
+
 type Redis struct {
-	Port     int
-	Version  string
-	Password *Secret
-	Cache    bool
+	Port          int
+	Version       string
+	Password      *dagger.Secret
+	Cache         bool
+	CacheDataPath string
+	Image         string
 }
 
 func New(
@@ -31,18 +37,32 @@ func New(
 	// The password to use for the Redis server.
 	//
 	//+optional
-	password *Secret,
+	password *dagger.Secret,
 
 	// Enable data persistency by mounting a cache volume.
 	//
 	//+optional
 	//+default=false
-	cache bool,	
+	cache bool,
+
+	// If cache is enabled define the path where the cache is set.
+	//
+	//+optional
+	//+default="/data/
+	cacheDataPath string,
+
+	// The image of the redis server to use.
+	//
+	//+optional
+	//+default="redis"
+	image string,
 ) *Redis {
 	return &Redis{
-		Port:     port,
-		Version:  version,
-		Password: password,
-		Cache:    cache,
+		Port:          port,
+		Version:       version,
+		Password:      password,
+		Cache:         cache,
+		CacheDataPath: cacheDataPath,
+		Image:         image,
 	}
 }

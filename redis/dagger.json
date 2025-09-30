@@ -1,6 +1,7 @@
 {
   "name": "redis",
-  "sdk": "go",
-  "source": ".",
-  "engineVersion": "v0.10.2"
+  "engineVersion": "v0.18.16",
+  "sdk": {
+    "source": "go"
+  }
 }

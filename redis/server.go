@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
+	"redis/internal/dagger"
 	"strconv"
 )
 
 // Server returns a new container running Redis a redis Server.
-func (r *Redis) Server() (*Container, error) {
+func (r *Redis) Server() (*dagger.Container, error) {
 	ctr := dag.
 		Container().
-		From(fmt.Sprintf("bitnami/redis:%s", r.Version)).
+		From(fmt.Sprintf("%s:%s", r.Image, r.Version)).
 		WithUser("root")
 
-	if r.Cache  {
-		ctr = ctr.WithMountedCache("/bitnami/redis/data", dag.CacheVolume("redis-data"))
+	if r.Cache {
+		ctr = ctr.WithMountedCache(r.CacheDataPath, dag.CacheVolume("redis-data"))
 	}
 
 	if r.Password != nil {
